@@ -1,5 +1,10 @@
 name: Weekly MVP Watch (CSV updater)
 
+name: Install dependencies
+  run: |
+    pip install -r requirements.txt
+    pip install pyarrow  # Add this line if not in requirements.txt
+
 on:
   schedule:
     # Every Monday 7:00 AM Pacific (adjust as you like).
