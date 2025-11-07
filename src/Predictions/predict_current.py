@@ -326,7 +326,7 @@ def run(season: int = SEASON) -> str:
     # Keep only the columns Canva needs (but don’t break your full CSVs)
     canva_cols = [
         "rank","player_name","team","position","games",
-        "win_pct_disp","td_int_disp","pass_ypg","total_yards","prob_disp",
+        "win_pct_disp","td_int_disp","passing_tds","pass_ypg","total_yards","prob_disp",
         "headshot_url","team_logo_url"
     ]
     canva = display[[c for c in canva_cols if c in display.columns]].copy()
