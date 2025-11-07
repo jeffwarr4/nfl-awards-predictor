@@ -19,6 +19,14 @@ import pandas as pd
 from joblib import load
 import nflreadpy as nfl
 
+# GitHub base for hosted assets (used for Canva image URLs)
+GITHUB_USER = "jeffwarr4"              # 👈 update with your username
+GITHUB_REPO = "nfl-awards-predictor"
+GITHUB_BRANCH = "main"
+
+CDN_BASE = f"https://jeffwarr4.github.io/nfl-awards-predictor"
+
+
 
 # ------------------------
 # Config
@@ -28,7 +36,7 @@ SEASON = 2025  # update each year
 REPO_ROOT = Path(__file__).resolve().parents[2]
 MODELS_DIR = REPO_ROOT / "models"
 OUTPUTS_DIR = REPO_ROOT / "outputs"
-ASSETS_DIR = REPO_ROOT / "assets" / "logos"  # put logos as {TEAM}.png (e.g., KC.png)
+#ASSETS_DIR = REPO_ROOT / "assets" / "logos"  # put logos as {TEAM}.png (e.g., KC.png)
 
 MODEL_PATH = MODELS_DIR / "nfl_mvp_logreg.pkl"  # we use Logistic Regression
 TRAINING_METRICS_PATH = OUTPUTS_DIR / "training_metrics.json"
@@ -141,7 +149,7 @@ def _aggregate_to_season(players_weekly: pd.DataFrame) -> pd.DataFrame:
 # ------------------------
 def run(season: int = SEASON) -> str:
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
-    ASSETS_DIR.mkdir(parents=True, exist_ok=True)
+    #ASSETS_DIR.mkdir(parents=True, exist_ok=True)
 
     print(f"Fetching {season} weekly player stats and schedules...")
 
@@ -149,6 +157,15 @@ def run(season: int = SEASON) -> str:
     players_pl = nfl.load_player_stats([season])  # weekly rows
     players_w = players_pl.to_pandas()
     players = _aggregate_to_season(players_w)
+
+    # <-- ADD THIS: carry a single headshot per player_id
+    if "headshot_url" in players_w.columns:
+        headshots = (
+            players_w[["player_id", "headshot_url"]]
+            .dropna()
+            .drop_duplicates(subset=["player_id"], keep="first")
+        )
+        players = players.merge(headshots, on="player_id", how="left")
 
     # 2) Compute team win% from played games only
     sched_pl = nfl.load_schedules([season])
@@ -243,7 +260,7 @@ def run(season: int = SEASON) -> str:
     view["adjusted_pred"] = view["mvp_probability"] * view["position"].map(pos_weight).fillna(0.6)
 
     # Local team logo path for Canva CSV merge (drop PNGs in assets/logos as TEAM_ABBR.png)
-    view["team_logo_path"] = ASSETS_DIR.as_posix() + "/" + view["team"].astype(str) + ".png"
+    view["team_logo_url"] = CDN_BASE + "/assets/logos/" + view["team"].astype(str) + ".png"
 
     # --- Optional rollups for a richer table ---
     view["total_yards"] = (
@@ -282,7 +299,7 @@ def run(season: int = SEASON) -> str:
         "pass_ypg", "rush_ypg", "recv_ypg",
 
         # model outputs
-        "mvp_probability", "adjusted_pred",
+        "mvp_probability", "adjusted_pred","headshot_url","team_logo_url"
     ] + headshot_cols + ["team_logo_path"]
 
 
@@ -310,7 +327,7 @@ def run(season: int = SEASON) -> str:
     canva_cols = [
         "rank","player_name","team","position","games",
         "win_pct_disp","td_int_disp","pass_ypg","total_yards","prob_disp",
-        "headshot_url","team_logo_path"
+        "headshot_url","team_logo_url"
     ]
     canva = display[[c for c in canva_cols if c in display.columns]].copy()
 
