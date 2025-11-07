@@ -316,6 +316,7 @@ def run(season: int = SEASON) -> str:
     display["win_pct_disp"] = (display["win_pct"] * 100).round(0).astype(int).astype(str) + "%"
     display["td_int_disp"]  = display["td_int_ratio"].round(2)
     display["pass_ypg"]     = pd.Series(display.get("pass_ypg", 0)).round(1)
+    display["rush_ypg"]     = pd.Series(display.get("rush_ypg",0)).round(1)
     display["total_yards"]  = pd.Series(display.get("total_yards", 0)).round(0).astype(int)
     display["prob_disp"]    = (display["adjusted_pred"] * 100).clip(0, 100).round(0).astype(int).astype(str) + "%"
 
@@ -326,7 +327,7 @@ def run(season: int = SEASON) -> str:
     # Keep only the columns Canva needs (but don’t break your full CSVs)
     canva_cols = [
         "rank","player_name","team","position","games",
-        "win_pct_disp","td_int_disp","passing_tds","rushing_tds","total_tds","pass_ypg","rusing_yards","rush_ypg","total_yards","prob_disp",
+        "win_pct_disp","td_int_disp","passing_tds","rushing_tds","total_tds","pass_ypg","rushing_yards","rush_ypg","total_yards","prob_disp",
         "headshot_url","team_logo_url"
     ]
     canva = display[[c for c in canva_cols if c in display.columns]].copy()
