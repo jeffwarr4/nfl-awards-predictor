@@ -18,6 +18,8 @@ import numpy as np
 import pandas as pd
 from joblib import load
 import nflreadpy as nfl
+from datetime import datetime
+
 
 # GitHub base for hosted assets (used for Canva image URLs)
 GITHUB_USER = "jeffwarr4"              # 👈 update with your username
@@ -26,6 +28,9 @@ GITHUB_BRANCH = "main"
 
 CDN_BASE = f"https://jeffwarr4.github.io/nfl-awards-predictor"
 
+# Define where Canva CSV exports will be stored
+ASSETS_DIR = Path("outputs")
+ASSETS_DIR.mkdir(exist_ok=True)
 
 
 # ------------------------
@@ -341,6 +346,62 @@ def run(season: int = SEASON) -> str:
     display.to_csv(OUT_ALL, index=False)
     display.head(10).to_csv(OUT_TOP10, index=False)
     display.head(5).to_csv(OUT_TOP5, index=False)
+
+    # --- Get week number and date stamp ---
+    now = datetime.now()
+    week_number = now.isocalendar()[1]
+    date_str = now.strftime("%Y-%m-%d")
+
+    # --- Sort candidates ---
+    top_candidates = view.sort_values("mvp_probability", ascending=False)
+
+    # --- Top 10 export ---
+    top10_filename = f"mvp_watch_canva_top10_week{week_number}_{date_str}.csv"
+    top10_path = ASSETS_DIR / top10_filename
+    top10 = top_candidates.head(10)
+    top10.to_csv(top10_path, index=False)
+
+    # --- Top 3 export (for Canva graphic) ---
+    top3 = top_candidates.head(3)
+    top3_row = {
+        "rank1_name": top3.iloc[0]["player_display_name"],
+        "rank1_team": top3.iloc[0]["team"],
+        "rank1_pos": top3.iloc[0]["position"],
+        "rank1_prob": round(float(top3.iloc[0]["mvp_probability"]), 3),
+        "rank1_tds": top3.iloc[0].get("total_tds", 0),
+        "rank1_yards": top3.iloc[0].get("total_yards", 0),
+        "rank1_logo": top3.iloc[0].get("team_logo_url", ""),
+        "rank1_headshot": top3.iloc[0].get("headshot_url", ""),
+
+        "rank2_name": top3.iloc[1]["player_display_name"],
+        "rank2_team": top3.iloc[1]["team"],
+        "rank2_pos": top3.iloc[1]["position"],
+        "rank2_prob": round(float(top3.iloc[1]["mvp_probability"]), 3),
+        "rank2_tds": top3.iloc[1].get("total_tds", 0),
+        "rank2_yards": top3.iloc[1].get("total_yards", 0),
+        "rank2_logo": top3.iloc[1].get("team_logo_url", ""),
+        "rank2_headshot": top3.iloc[1].get("headshot_url", ""),
+
+        "rank3_name": top3.iloc[2]["player_display_name"],
+        "rank3_team": top3.iloc[2]["team"],
+        "rank3_pos": top3.iloc[2]["position"],
+        "rank3_prob": round(float(top3.iloc[2]["mvp_probability"]), 3),
+        "rank3_tds": top3.iloc[2].get("total_tds", 0),
+        "rank3_yards": top3.iloc[2].get("total_yards", 0),
+        "rank3_logo": top3.iloc[2].get("team_logo_url", ""),
+        "rank3_headshot": top3.iloc[2].get("headshot_url", ""),
+    }
+
+    top3_filename = f"mvp_watch_canva_top3_week{week_number}_{date_str}.csv"
+    top3_path = ASSETS_DIR / top3_filename
+    pd.DataFrame([top3_row]).to_csv(top3_path, index=False)
+
+    print(f"✅ Canva CSV exports created:\n - {top3_path}\n - {top10_path}")
+
+    print("✅ Canva CSV exports created:")
+    print(" - outputs/mvp_watch_canva_top3.csv")
+    print(" - outputs/mvp_watch_canva_top10.csv")
+
 
     print(f"Saved ALL   → {OUT_ALL}")
     print(f"Saved Top10 → {OUT_TOP10}")
