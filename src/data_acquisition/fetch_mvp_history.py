@@ -41,15 +41,15 @@ def fetch_winners() -> pd.DataFrame:
         raise ValueError(f"Unable to locate player column in PFR table; columns={df.columns.tolist()}")
 
     # Keep a minimal, stable set of columns (only those present)
-    keep_cols = [c for c in ["Year", player_col, "Pos", "Tm"] if c in df.columns]
-    df = df[keep_cols].rename(
-        columns={
-            "Year": "season",
-            player_col: "player_name",
-            "Pos": "position",
-            "Tm": "team",
-        }
-    )
+        keep_cols = [c for c in ["Year", player_col, "Pos", "Tm"] if c in df.columns]
+        df = df[keep_cols].rename(
+            columns={
+                "Year": "season",
+                player_col: "player_name",
+                "Pos": "position",
+                "Tm": "team",
+            }
+        )
 
     # Clean fields
     df["season"] = pd.to_numeric(df["season"], errors="coerce").astype("Int64")

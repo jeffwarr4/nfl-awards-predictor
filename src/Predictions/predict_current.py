@@ -280,7 +280,31 @@ def run(season: int = SEASON) -> str:
         + view.get("receiving_tds", pd.Series(0)).astype(float).fillna(0)
     )
 
-    # Per-game rates were already computed: pass_ypg, rush_ypg, recv_ypg
+    # Per-game rates were already computed: pass_ypg, rush_ypg, recv_ypg 
+    # Ensure numeric Series (avoid scalar .get pitfalls)
+    att = pd.to_numeric(view["attempts"], errors="coerce").fillna(0)
+    comp = pd.to_numeric(view["completions"], errors="coerce").fillna(0)
+    yds = pd.to_numeric(view["passing_yards"], errors="coerce").fillna(0)
+    tds = pd.to_numeric(view["passing_tds"], errors="coerce").fillna(0)
+    ints = pd.to_numeric(view["passing_interceptions"], errors="coerce").fillna(0)
+
+    # Avoid division by zero by using NaN where ATT == 0
+    att_nz = att.replace(0, np.nan)
+
+    a = ((comp.div(att_nz)) - 0.3) * 5
+    b = ((yds.div(att_nz)) - 3.0) * 0.25
+    c = (tds.div(att_nz)) * 20.0
+    d = 2.375 - ((ints.div(att_nz)) * 25.0)
+
+    # Clamp each component to [0, 2.375]
+    a = a.clip(lower=0.0, upper=2.375)
+    b = b.clip(lower=0.0, upper=2.375)
+    c = c.clip(lower=0.0, upper=2.375)
+    d = d.clip(lower=0.0, upper=2.375)
+
+    passer_rating = ((a + b + c + d) / 6.0) * 100.0
+    view["passer_rating"] = passer_rating.fillna(0.0).round(1)
+
 
 
         # --- Choose what to show in the CSVs / Canva merge ---
@@ -290,7 +314,7 @@ def run(season: int = SEASON) -> str:
         "games", "win_pct",
 
         # efficiency & engineered
-        "td_int_ratio", "win_pct_scaled", "games_weighted_win", "efficiency_win",
+        "td_int_ratio", "win_pct_scaled", "games_weighted_win", "efficiency_win","passer_rating",
 
         # volume (season totals)
         "passing_yards", "passing_tds", "passing_interceptions",
@@ -307,6 +331,9 @@ def run(season: int = SEASON) -> str:
         "mvp_probability", "adjusted_pred","headshot_url","team_logo_url"
     ] + headshot_cols + ["team_logo_path"]
 
+   
+    # Optional: only keep for QBs; others -> 0
+    view.loc[view["position"] != "QB", "passer_rating"] = 0.0
 
     display = (
         view.sort_values("adjusted_pred", ascending=False)
@@ -332,7 +359,7 @@ def run(season: int = SEASON) -> str:
     # Keep only the columns Canva needs (but don’t break your full CSVs)
     canva_cols = [
         "rank","player_name","team","position","games",
-        "win_pct_disp","td_int_disp","passing_tds","rushing_tds","total_tds","pass_ypg","rushing_yards","rush_ypg","total_yards","prob_disp",
+        "win_pct_disp","td_int_disp","passing_tds","passer_rating","rushing_tds","total_tds","pass_ypg","rushing_yards","rush_ypg","total_yards","prob_disp",
         "headshot_url","team_logo_url"
     ]
     canva = display[[c for c in canva_cols if c in display.columns]].copy()
@@ -362,41 +389,91 @@ def run(season: int = SEASON) -> str:
     top10.to_csv(top10_path, index=False)
 
     # --- Top 3 export (for Canva graphic) ---
-    top3 = top_candidates.head(3)
-    top3_row = {
-        "rank1_name": top3.iloc[0]["player_display_name"],
-        "rank1_team": top3.iloc[0]["team"],
-        "rank1_pos": top3.iloc[0]["position"],
-        "rank1_prob": round(float(top3.iloc[0]["mvp_probability"]), 3),
-        "rank1_tds": top3.iloc[0].get("total_tds", 0),
-        "rank1_yards": top3.iloc[0].get("total_yards", 0),
-        "rank1_logo": top3.iloc[0].get("team_logo_url", ""),
-        "rank1_headshot": top3.iloc[0].get("headshot_url", ""),
+    # ── Pivot Top 10 into a single wide row for Canva ──────────────────────────────
+   
+    # Ensure outputs dir exists
+    #try:
+    #    ASSETS_DIR
+    #except NameError:
+    #    ASSETS_DIR = Path("outputs")
+    #    ASSETS_DIR.mkdir(exist_ok=True)
 
-        "rank2_name": top3.iloc[1]["player_display_name"],
-        "rank2_team": top3.iloc[1]["team"],
-        "rank2_pos": top3.iloc[1]["position"],
-        "rank2_prob": round(float(top3.iloc[1]["mvp_probability"]), 3),
-        "rank2_tds": top3.iloc[1].get("total_tds", 0),
-        "rank2_yards": top3.iloc[1].get("total_yards", 0),
-        "rank2_logo": top3.iloc[1].get("team_logo_url", ""),
-        "rank2_headshot": top3.iloc[1].get("headshot_url", ""),
+    # Sort by model probability (highest first)
+    top10_sorted = (
+        view.sort_values(by="mvp_probability", ascending=False)
+            .head(10)
+            .reset_index(drop=True)
+    )
 
-        "rank3_name": top3.iloc[2]["player_display_name"],
-        "rank3_team": top3.iloc[2]["team"],
-        "rank3_pos": top3.iloc[2]["position"],
-        "rank3_prob": round(float(top3.iloc[2]["mvp_probability"]), 3),
-        "rank3_tds": top3.iloc[2].get("total_tds", 0),
-        "rank3_yards": top3.iloc[2].get("total_yards", 0),
-        "rank3_logo": top3.iloc[2].get("team_logo_url", ""),
-        "rank3_headshot": top3.iloc[2].get("headshot_url", ""),
-    }
+    # Coerce numerics we’ll export
+    for c in ["win_pct", "passer_rating", "pass_ypg", "total_yards", "total_tds"]:
+        if c in top10_sorted.columns:
+            top10_sorted[c] = pd.to_numeric(top10_sorted[c], errors="coerce")
 
-    top3_filename = f"mvp_watch_canva_top3_week{week_number}_{date_str}.csv"
-    top3_path = ASSETS_DIR / top3_filename
-    pd.DataFrame([top3_row]).to_csv(top3_path, index=False)
+    def _get_str(row: pd.Series, col: str, default: str = "") -> str:
+        if col in row and pd.notna(row[col]):
+            return str(row[col])
+        return default
 
-    print(f"✅ Canva CSV exports created:\n - {top3_path}\n - {top10_path}")
+    def _get_float(row: pd.Series, col: str, default: float = 0.0) -> float:
+        if col in row and pd.notna(row[col]):
+            try:
+                return float(row[col])
+            except (TypeError, ValueError):
+                return default
+        return default
+
+    def build_pivot(dfi: pd.DataFrame, start_rank: int, end_rank: int, include_images: bool) -> pd.DataFrame:
+        """
+        Builds a single-row DataFrame with columns rank{K}_<field> for K in [start_rank, end_rank].
+        """
+        row_out: dict[str, object] = {}
+        # Map fields once
+        for k in range(start_rank, end_rank + 1):
+            idx = k - 1  # zero-based index into top10
+            if idx < len(dfi):
+                rec = dfi.iloc[idx]
+                name = _get_str(rec, "player_display_name", _get_str(rec, "player_name"))
+                row_out[f"rank{k}_name"]          = name
+                row_out[f"rank{k}_team"]          = _get_str(rec, "team")
+                row_out[f"rank{k}_pos"]           = _get_str(rec, "position")
+                row_out[f"rank{k}_win_pct"]       = _get_float(rec, "win_pct")
+                row_out[f"rank{k}_passer_rating"] = _get_float(rec, "passer_rating")
+                row_out[f"rank{k}_pass_ypg"]      = _get_float(rec, "pass_ypg")
+                row_out[f"rank{k}_total_yards"]   = _get_float(rec, "total_yards")
+                row_out[f"rank{k}_total_tds"]     = _get_float(rec, "total_tds")
+                if include_images:
+                    row_out[f"rank{k}_headshot"]  = _get_str(rec, "headshot_url")
+                    row_out[f"rank{k}_logo"]      = _get_str(rec, "team_logo_url")
+            else:
+                # pad if fewer than expected
+                row_out[f"rank{k}_name"]          = ""
+                row_out[f"rank{k}_team"]          = ""
+                row_out[f"rank{k}_pos"]           = ""
+                row_out[f"rank{k}_win_pct"]       = 0.0
+                row_out[f"rank{k}_passer_rating"] = 0.0
+                row_out[f"rank{k}_pass_ypg"]      = 0.0
+                row_out[f"rank{k}_total_yards"]   = 0.0
+                row_out[f"rank{k}_total_tds"]     = 0.0
+                if include_images:
+                    row_out[f"rank{k}_headshot"]  = ""
+                    row_out[f"rank{k}_logo"]      = ""
+        return pd.DataFrame([row_out])
+
+    # Build Top-5 (with images) → rank1_* … rank5_*
+    top5_df = build_pivot(top10_sorted, 1, 5, include_images=True)
+    top5_path = ASSETS_DIR / "mvp_watch_top5_pivot.csv"
+    top5_df.to_csv(top5_path, index=False)
+    #shutil.copy2(top5_path, DOCS_DIR / top5_path.name)
+
+    # Build ranks 6–10 (no images) → rank6_* … rank10_*
+    six_to_ten_df = build_pivot(top10_sorted, 6, 10, include_images=False)
+    six_to_ten_path = ASSETS_DIR / "mvp_watch_6to10_pivot.csv"
+    six_to_ten_df.to_csv(six_to_ten_path, index=False)
+    #shutil.copy2(six_to_ten_path, DOCS_DIR / six_to_ten_path.name)
+
+    print(f"✅ Wrote: {top5_path} and {six_to_ten_path}")
+
 
     print("✅ Canva CSV exports created:")
     print(" - outputs/mvp_watch_canva_top3.csv")
