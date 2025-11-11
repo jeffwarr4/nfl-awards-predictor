@@ -2,7 +2,7 @@ name: Weekly MVP Watch (CSV updater)
 
 on:
   schedule:
-    # Mondays 7:00 AM Pacific (≈15:00 UTC). Adjust as needed.
+    # Tuesdays 7:00 AM Pacific (≈15:00 UTC). Adjust as needed.
     - cron: "0 15 * * TUE"
   workflow_dispatch: {}
 
