@@ -380,12 +380,13 @@ def run(season: int = SEASON) -> str:
     date_str = now.strftime("%Y-%m-%d")
 
     # --- Sort candidates ---
-    top_candidates = view.sort_values("mvp_probability", ascending=False)
+    top10 = display.head(10).copy()
+
 
     # --- Top 10 export ---
     top10_filename = f"mvp_watch_canva_top10_week{week_number}_{date_str}.csv"
     top10_path = ASSETS_DIR / top10_filename
-    top10 = top_candidates.head(10)
+    top10 = display.head(10).copy()
     top10.to_csv(top10_path, index=False)
 
     # --- Top 3 export (for Canva graphic) ---
@@ -399,21 +400,40 @@ def run(season: int = SEASON) -> str:
     #    ASSETS_DIR.mkdir(exist_ok=True)
 
     # Sort by model probability (highest first)
-    top10_sorted = (
-        view.sort_values(by="mvp_probability", ascending=False)
-            .head(10)
-            .reset_index(drop=True)
-    )
+    top10_sorted = display.head(10).copy()
 
     # Coerce numerics we’ll export
     for c in ["win_pct", "passer_rating", "pass_ypg", "total_yards", "total_tds"]:
         if c in top10_sorted.columns:
             top10_sorted[c] = pd.to_numeric(top10_sorted[c], errors="coerce")
 
-    def _get_str(row: pd.Series, col: str, default: str = "") -> str:
-        if col in row and pd.notna(row[col]):
-            return str(row[col])
-        return default
+    def _get_str(row, col, default=""):
+        """
+        Safe getter for string-ish values from a pandas Series/row.
+        Handles duplicate-column cases where row[col] returns a Series.
+        """
+        if row is None:
+            return default
+
+        # Safer membership check for a pandas Series
+        if not hasattr(row, "index") or col not in row.index:
+            return default
+
+        val = row[col]
+
+        # If duplicate columns exist, pandas can return a Series here
+        if isinstance(val, pd.Series):
+            # take the first non-null value if possible
+            non_null = val.dropna()
+            if len(non_null) == 0:
+                return default
+            val = non_null.iloc[0]
+
+        if pd.isna(val):
+            return default
+
+        return str(val)
+
 
     def _get_float(row: pd.Series, col: str, default: float = 0.0) -> float:
         if col in row and pd.notna(row[col]):
@@ -459,6 +479,9 @@ def run(season: int = SEASON) -> str:
                     row_out[f"rank{k}_headshot"]  = ""
                     row_out[f"rank{k}_logo"]      = ""
         return pd.DataFrame([row_out])
+    
+    dupes = top10_sorted.columns[top10_sorted.columns.duplicated()].tolist()
+    print("DUPLICATE COLS:", dupes)
 
     # Build Top-5 (with images) → rank1_* … rank5_*
     top5_df = build_pivot(top10_sorted, 1, 5, include_images=True)
