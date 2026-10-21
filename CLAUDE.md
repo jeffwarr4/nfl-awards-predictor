@@ -4,47 +4,89 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## What this is
 
-An NFL MVP predictor that trains on historical season stats (2000–2024) + AP MVP winners, scores the current season, and publishes "MVP Watch" CSVs that feed Canva graphics via GitHub Pages (`https://jeffwarr4.github.io/nfl-awards-predictor`).
+An NFL MVP predictor: trains on 2000–2025 season stats + AP MVP vote tables, scores the live season weekly,
+and publishes a top-10 board (CSV for a Google Sheet, an AI-written chip/why/caption, and a rendered 1080×1350
+social graphic). Mirrors the patterns of the sibling `mlb-awards-predictor` repo; headshots and logos come from
+the sibling `stinger-assets` repo. The 2026 rebuild rationale and backtests are in
+`docs/nfl-2026-evaluation-and-plan.md`.
+
+## Environment
+
+- Venv lives outside the repo: `C:\DevVenvs2\nfl-awards-predictor-venv\Scripts\python.exe`. The in-repo `.venv`
+  points at a Python install that no longer exists.
+- `pip install -r requirements.txt`. scikit-learn is pinned because `models/*.joblib` are pickled pipelines.
+- `ANTHROPIC_API_KEY` enables chips and captions; without it they are skipped with a warning (not an error).
+- `STINGER_ASSETS_DIR` overrides the default `../stinger-assets` path for headshots/logos.
 
 ## Commands
 
-There is no test suite, linter, or build step. Every script is run as a module from the repo root (imports and relative paths depend on it):
+No test suite or linter. Every script runs as a module from the repo root (imports rely on it):
 
 ```bash
-python -m src.data_acquisition.fetch_mvp_history   # scrape PFR -> data/raw/mvp_winners.csv (needs lxml)
-python -m src.data_acquisition.fetch_player_stats  # nflreadpy -> data/raw/player_season_stats.csv
-python -m src.preprocessing.merge_datasets         # -> data/processed/training_data.csv
-python -m src.modeling.train_model                 # -> models/*.pkl, outputs/training_metrics.json, feature importance
-python -m src.Predictions.predict_current          # -> outputs/*.csv for the current SEASON
-python src/assests/download_headshots.py           # newest Canva CSV -> assets/headshots/*.png
+python -m src.data_acquisition.fetch_mvp_history   # PFR scrape -> data/raw/mvp_winners.csv (needs lxml)
+python -m src.data_acquisition.fetch_player_stats  # nflreadpy, TRAIN_START..TRAIN_END -> data/raw/player_season_stats.csv
+python -m src.preprocessing.merge_datasets         # + winners + data/raw/mvp_votes.csv -> data/processed/training_data.csv
+python -m src.modeling.train_model                 # both targets; prints leave-one-season-out winner-rank table
+python -m src.modeling.train_model --target winner
+python -m src.Predictions.predict_current          # live board + candidates + chips + graphic + caption
+python -m src.Predictions.predict_current --season 2025 --through-week 4 --outdir <scratch> --no-publish  # replay
+python -m src.publish.render_graphics              # re-render from predictions/{year}/top10_mvp_latest.csv
+python -m src.publish.generate_chips               # likewise; generate_captions too
 ```
 
-Dependencies: there is no `requirements.txt`; `requirements.freeze.txt` is a local pip freeze. Core libs are pandas, numpy, scikit-learn, joblib, nflreadpy, polars, pyarrow (plus requests/tqdm for headshots). A local `.venv` exists.
+`mvp_winners.csv` is hand-maintained for recent seasons (2025 Stafford was added by hand); re-running the PFR
+scraper overwrites it.
 
-## Pipeline architecture
+## Architecture
 
-Linear, file-based pipeline — each stage reads the previous stage's CSV:
+**`config.py` is the single source of truth** — years (`CURRENT_YEAR`, `TRAIN_START`, `TRAIN_END`), all paths,
+the feature list, `MODEL_TARGET`, and the in-season knobs. Bump `CURRENT_YEAR`/`TRAIN_END` each season; nothing
+else hardcodes a year.
 
-1. **Acquisition** (`src/data_acquisition/`): historical season-level stats for QB/RB/WR via `nflreadpy` (polars), joined with team win% computed from schedules. `YEARS` is hard-coded in `fetch_player_stats.py`.
-2. **Merge** (`src/preprocessing/merge_datasets.py`): left-joins winners onto players by `(season, normalized name)` to produce the binary `mvp_winner` target.
-3. **Train** (`src/modeling/train_model.py`): LogisticRegression and HistGradientBoosting, both `class_weight="balanced"`, evaluated with `GroupKFold` by season and season-level top-1/top-3 hit rates. Writes `outputs/training_metrics.json`, whose `features_used` list is **the contract** for inference.
-4. **Predict** (`src/Predictions/predict_current.py`): loads *weekly* current-season stats, aggregates to season totals, computes win% from played games only, rebuilds features, then `reindex`es to `features_used`. Uses **only the logreg model**. Applies presentation filters (games ≥ 8, QB/RB only, RB weight 0.85 → `adjusted_pred`) and writes ranked outputs.
+**Feature engineering lives only in `src/features.py`** (`clean_name`, `add_derived_features`, `feature_matrix`),
+used by both merge/training and live scoring. `feature_matrix` reindexes to `config.FEATURES` and fills missing
+columns with 0 — a feature added to the list but not computed silently becomes 0 rather than erroring.
 
-### Logic duplicated across files — keep in sync
-- `_clean_name` (name-key normalization) exists in both `merge_datasets.py` and `predict_current.py`.
-- `_add_derived_features` exists in both `train_model.py` and `predict_current.py` (`td_int_ratio`, position flags, `win_pct_scaled`, `games_weighted_win`, `efficiency_win`). The predict version additionally computes per-game yards. A feature added to training must be added to prediction too, or it silently becomes 0 via `reindex(fill_value=0)`.
+**Two targets, one live.** `MODEL_TARGET = "vote_share"`: label = received any MVP vote, vote-getters weighted
+`1 + 20*share`, `StandardScaler + LogisticRegression(C=0.5, class_weight="balanced")`. `"winner"` is last year's
+winner-only model, kept trainable for comparison. Models and metrics are committed in `models/`
+(`nfl_mvp_{target}.joblib`, `metrics_{target}.json` with per-season winner rank, `coefficients_{target}.csv`);
+the weekly workflow does **not** retrain. Evaluation is leave-one-season-out on a QB/RB board, reported as
+winner #1 / top-3 / top-5 / mean rank — AUC is deliberately not reported (~1 positive per season).
 
-### Outputs consumed downstream
-`predict_current.py` writes to `outputs/`: `mvp_predictions_{SEASON}_{all,top10,top5}.csv`, `mvp_watch_canva_{SEASON}.csv`, a dated `mvp_watch_canva_top10_week{ISO week}_{date}.csv`, and single-row wide pivots `mvp_watch_top5_pivot.csv` / `mvp_watch_6to10_pivot.csv` (`rank{K}_<field>` columns used as Canva bulk-create data). Column names in these files are a de-facto external API for the Canva templates — don't rename them casually. All pivots/top-N must come from the single ranked `display` frame so orderings agree.
+**Live scoring (`predict_current.py`)** — order matters:
+1. Weekly REG stats → season-to-date per player; team = most recent team; `passing_cpoe` is an
+   attempt-weighted mean across weeks, not a sum.
+2. Eligibility: QB/RB with games ≥ 60% of *his team's* played games (survives byes; the old `games >= 8`
+   gate emptied the board through Week 7).
+3. Counting stats **and games** projected to a 17-game pace (`× 17 / team_games`) before scoring; rates
+   aren't scaled. Without this the vote-trained model collapses early in the season.
+4. Displayed stats are actual season-to-date values, not the projection. QB-only stats are blank for RBs.
+5. `mvp_prob` per `config.DISPLAY_PROB`. Note pace-projected scores sit at 0.99+, so `top10_share` comes out
+   ~10% each; `softmax` is the alternative.
 
-Team logos are served from `assets/logos/{TEAM}.png` via the GitHub Pages URL in `CDN_BASE`; headshot URLs come from nflreadpy.
+**Outputs (`predictions/{year}/`)** — `top10_mvp_latest.csv` is the Google Sheet import; its column order is
+`BOARD_COLS` in `predict_current.py` (a contract — don't rename casually). Plus 4 rolling timestamped archives,
+`chip_data/`, `graphics/mvp_board_{year}_wk{NN}.png` + `mvp_board_latest.png`, `graphics/caption_mvp.txt`.
+`.prev_top10_mvp.csv` is the movement baseline: it is rolled forward only when `through_week` advances, so a
+same-week rerun keeps last week's arrows. Deleting it resets every row to NEW.
+
+**stinger-assets contract.** `player_key = firstname_lastname_team` (nflreadpy team code, lowercased) and must
+equal `safe_filename(f"{name} {team}")` in `stinger-assets/sync_espn_headshots.py` (apostrophes/periods dropped,
+hyphens split). `predictions/nfl_candidates.csv` (top 25 eligible, not just top 10, so headshots exist before a
+player climbs) is pulled by stinger-assets' Monday sync. Logos are ESPN-named and lowercase; nflreadpy `LA`/`WAS`
+map to ESPN `lar`/`wsh` (`src/publish/stats.py: ESPN_TEAM_CODES`). The runner is case-sensitive; Windows isn't.
+
+**Training-data gotchas.** nflverse labels 2000–2002 player rows with current franchise codes (`LV`/`LA`/`LAC`)
+while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` bridges the win% join (previously
+611 player-seasons, incl. Faulk 2000 and Gannon 2002, had win% silently zeroed). Same-name collisions in a season
+(two Adrian Petersons in 2008) keep vote/winner labels only on the higher-volume player.
+
+**Legacy.** `outputs/` and `docs/outputs/` (GitHub Pages copies of the 2025 Canva CSVs) are no longer written.
 
 ## Automation
 
-`.github/workflows/weekly-mvp.yml` runs Tuesdays 15:00 UTC (and on dispatch): retrains, predicts, copies `outputs/*.csv` into `docs/outputs/` (the GitHub Pages copy), and commits as "Weekly MVP Watch auto-update". So `outputs/` and `docs/outputs/` are mirrored, bot-committed artifacts; expect frequent upstream commits touching them.
-
-## Gotchas
-- `SEASON = 2025` in `predict_current.py` must be bumped each year; training `YEARS` likewise.
-- The headshot script lives in the misspelled `src/assests/` and uses CWD-relative paths.
-- `fetch_mvp_history.py` has a mis-indented block (the column `keep_cols`/rename sits inside the `if player_col is None` branch after `raise`, so it never runs) — the rename to `season`/`player_name` won't happen on fresh scrapes.
-- The Canva CSV currently contains a duplicated `headshot_url` column (added both explicitly in `display_cols` and via `headshot_cols`); `download_headshots.py` tolerates this.
+`.github/workflows/weekly-mvp.yml`: Tuesdays 15:00 UTC, Sep–Feb, plus manual dispatch. Checks out
+stinger-assets as a sibling (`STINGER_ASSETS_DIR`), runs `predict_current`, fails if the board is empty (the
+script also exits non-zero before overwriting the last good board), uploads CSV/PNG/TXT artifacts, and commits
+`predictions/` with `[skip ci]`. Needs the `ANTHROPIC_API_KEY` secret for chips/captions.
