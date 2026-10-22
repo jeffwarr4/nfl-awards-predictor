@@ -11,7 +11,12 @@ import polars as pl
 import pandas as pd
 import nflreadpy as nfl
 
-YEARS: Iterable[int] = range(2000, 2025)
+from config import TRAIN_START, TRAIN_END, PLAYER_STATS_CSV
+
+YEARS: Iterable[int] = range(TRAIN_START, TRAIN_END + 1)
+
+# Schedule code of the day -> current franchise code
+RELOCATED_TEAMS = {"OAK": "LV", "STL": "LA", "SD": "LAC"}
 
 def load_player_season_stats(years: Iterable[int]) -> pl.DataFrame:
     # summary_level='reg' gives regular-season totals by player+season
@@ -38,9 +43,21 @@ def load_team_win_pct(years: Iterable[int]) -> pl.DataFrame:
         .agg(games=pl.len(), wins=pl.col("win").sum())
         .with_columns((pl.col("wins") / pl.col("games")).alias("win_pct"))
     )
-    return team_records
+    # nflverse player stats label some early seasons (2000-2002) with the
+    # franchise's current code while schedules keep the code of the day.
+    # Duplicate relocated teams under their modern code so the join matches,
+    # but only for seasons where the modern code isn't already present.
+    present = set(team_records.select(["season", "team"]).iter_rows())
+    aliases = (
+        team_records
+        .filter(pl.col("team").is_in(list(RELOCATED_TEAMS)))
+        .with_columns(pl.col("team").replace(RELOCATED_TEAMS))
+        .filter(pl.struct(["season", "team"]).map_elements(
+            lambda r: (r["season"], r["team"]) not in present, return_dtype=pl.Boolean))
+    )
+    return pl.concat([team_records, aliases])
 
-def run(years: Iterable[int] = YEARS, out_path: str = "data/raw/player_season_stats.csv") -> str:
+def run(years: Iterable[int] = YEARS, out_path: str = str(PLAYER_STATS_CSV)) -> str:
     players = load_player_season_stats(years)
     players = players.rename({"recent_team": "team"})
     teams = load_team_win_pct(years)

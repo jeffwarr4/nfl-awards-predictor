@@ -1,0 +1,202 @@
+{
+  "target": "winner",
+  "train_seasons": [
+    2000,
+    2025
+  ],
+  "n_samples": 11225,
+  "features_used": [
+    "games",
+    "attempts",
+    "completions",
+    "passing_yards",
+    "passing_tds",
+    "passing_interceptions",
+    "passing_epa",
+    "passing_cpoe",
+    "rushing_yards",
+    "rushing_tds",
+    "rushing_epa",
+    "receiving_yards",
+    "receiving_tds",
+    "receiving_epa",
+    "pass_ypg",
+    "rush_ypg",
+    "recv_ypg",
+    "win_pct",
+    "td_int_ratio",
+    "is_qb",
+    "is_rb",
+    "is_wr",
+    "win_pct_scaled",
+    "games_weighted_win",
+    "efficiency_win"
+  ],
+  "backtest": {
+    "per_season": [
+      {
+        "season": 2000,
+        "winner": "Marshall Faulk",
+        "winner_rank": 19,
+        "model_top1": "Rich Gannon"
+      },
+      {
+        "season": 2001,
+        "winner": "Kurt Warner",
+        "winner_rank": 4,
+        "model_top1": "Marshall Faulk"
+      },
+      {
+        "season": 2002,
+        "winner": "Rich Gannon",
+        "winner_rank": 1,
+        "model_top1": "Rich Gannon"
+      },
+      {
+        "season": 2003,
+        "winner": "Peyton Manning, Steve McNair",
+        "winner_rank": 2,
+        "model_top1": "Ahman Green"
+      },
+      {
+        "season": 2004,
+        "winner": "Peyton Manning",
+        "winner_rank": 1,
+        "model_top1": "Peyton Manning"
+      },
+      {
+        "season": 2005,
+        "winner": "Shaun Alexander",
+        "winner_rank": 2,
+        "model_top1": "Peyton Manning"
+      },
+      {
+        "season": 2006,
+        "winner": "LaDainian Tomlinson",
+        "winner_rank": 2,
+        "model_top1": "Peyton Manning"
+      },
+      {
+        "season": 2007,
+        "winner": "Tom Brady",
+        "winner_rank": 1,
+        "model_top1": "Tom Brady"
+      },
+      {
+        "season": 2008,
+        "winner": "Peyton Manning",
+        "winner_rank": 1,
+        "model_top1": "Peyton Manning"
+      },
+      {
+        "season": 2009,
+        "winner": "Peyton Manning",
+        "winner_rank": 3,
+        "model_top1": "Philip Rivers"
+      },
+      {
+        "season": 2010,
+        "winner": "Tom Brady",
+        "winner_rank": 1,
+        "model_top1": "Tom Brady"
+      },
+      {
+        "season": 2011,
+        "winner": "Aaron Rodgers",
+        "winner_rank": 1,
+        "model_top1": "Aaron Rodgers"
+      },
+      {
+        "season": 2012,
+        "winner": "Adrian Peterson",
+        "winner_rank": 11,
+        "model_top1": "Tom Brady"
+      },
+      {
+        "season": 2013,
+        "winner": "Peyton Manning",
+        "winner_rank": 1,
+        "model_top1": "Peyton Manning"
+      },
+      {
+        "season": 2014,
+        "winner": "Aaron Rodgers",
+        "winner_rank": 1,
+        "model_top1": "Aaron Rodgers"
+      },
+      {
+        "season": 2015,
+        "winner": "Cam Newton",
+        "winner_rank": 1,
+        "model_top1": "Cam Newton"
+      },
+      {
+        "season": 2016,
+        "winner": "Matt Ryan",
+        "winner_rank": 3,
+        "model_top1": "Tom Brady"
+      },
+      {
+        "season": 2017,
+        "winner": "Tom Brady",
+        "winner_rank": 1,
+        "model_top1": "Tom Brady"
+      },
+      {
+        "season": 2018,
+        "winner": "Patrick Mahomes",
+        "winner_rank": 1,
+        "model_top1": "Patrick Mahomes"
+      },
+      {
+        "season": 2019,
+        "winner": "Lamar Jackson",
+        "winner_rank": 1,
+        "model_top1": "Lamar Jackson"
+      },
+      {
+        "season": 2020,
+        "winner": "Aaron Rodgers",
+        "winner_rank": 3,
+        "model_top1": "Patrick Mahomes"
+      },
+      {
+        "season": 2021,
+        "winner": "Aaron Rodgers",
+        "winner_rank": 3,
+        "model_top1": "Patrick Mahomes"
+      },
+      {
+        "season": 2022,
+        "winner": "Patrick Mahomes",
+        "winner_rank": 1,
+        "model_top1": "Patrick Mahomes"
+      },
+      {
+        "season": 2023,
+        "winner": "Lamar Jackson",
+        "winner_rank": 4,
+        "model_top1": "Brock Purdy"
+      },
+      {
+        "season": 2024,
+        "winner": "Josh Allen",
+        "winner_rank": 2,
+        "model_top1": "Lamar Jackson"
+      },
+      {
+        "season": 2025,
+        "winner": "Matthew Stafford",
+        "winner_rank": 5,
+        "model_top1": "Drake Maye"
+      }
+    ],
+    "summary": {
+      "seasons": 26,
+      "winner_top1": 0.5,
+      "winner_top3": 0.8076923076923077,
+      "winner_top5": 0.9230769230769231,
+      "winner_mean_rank": 2.923076923076923
+    }
+  }
+}

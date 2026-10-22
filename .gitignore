@@ -1,0 +1,9 @@
+# virtual env / caches
+.venv/
+__pycache__/
+*.pyc
+
+
+# OS / editor junk
+.DS_Store
+*.log
