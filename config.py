@@ -72,13 +72,4 @@ MIN_TEAM_GAME_SHARE = 0.60    # must have played ≥60% of his team's games
 BOARD_POSITIONS     = ("QB", "RB")
 TOP_N               = 10
 CANDIDATE_POOL      = 25      # headshots pre-queued for the top-N eligible players
-
-# Displayed mvp_prob for the top 10.
-# "top10_share": model_score / sum(top-10 model_scores). With pace-projected
-#                stats the raw scores sit at 0.99+, so this comes out ~10% each.
-# "softmax":     exp(logit/T) normalized over the top 10. T=1.3 maximizes the
-#                held-out likelihood of the actual winner on full-season boards
-#                (2000–2025), but still gives #1 ~80–90% — overconfident early.
-DISPLAY_PROB        = "top10_share"
-DISPLAY_TEMPERATURE = 1.3
 ARCHIVES_TO_KEEP    = 4

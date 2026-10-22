@@ -62,8 +62,9 @@ winner #1 / top-3 / top-5 / mean rank — AUC is deliberately not reported (~1 p
 3. Counting stats **and games** projected to a 17-game pace (`× 17 / team_games`) before scoring; rates
    aren't scaled. Without this the vote-trained model collapses early in the season.
 4. Displayed stats are actual season-to-date values, not the projection. QB-only stats are blank for RBs.
-5. `mvp_prob` per `config.DISPLAY_PROB`. Note pace-projected scores sit at 0.99+, so `top10_share` comes out
-   ~10% each; `softmax` is the alternative.
+5. Ranked by `model_score`; **no MVP % is displayed** (CSV or graphic). Pace-projected scores all sit at 0.99+,
+   so a share-of-top-10 % was ~10% for everyone, and a softmax over logits gave #1 ~90% at Week 6. Don't
+   reintroduce one without a calibration that holds up in-season.
 
 **Outputs (`predictions/{year}/`)** — `top10_mvp_latest.csv` is the Google Sheet import; its column order is
 `BOARD_COLS` in `predict_current.py` (a contract — don't rename casually). Plus 4 rolling timestamped archives,

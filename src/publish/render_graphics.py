@@ -196,13 +196,6 @@ def draw_movement(draw, x: int, y: int, movement: str, size: int) -> int:
     return text_w(draw, "–", font)
 
 
-def pct_text(v) -> str:
-    try:
-        return f"{float(v) * 100:.0f}%"
-    except (TypeError, ValueError):
-        return ""
-
-
 # ─────────────────────────────────────────────────────────────────
 # LAYOUT
 # ─────────────────────────────────────────────────────────────────
@@ -256,10 +249,10 @@ def draw_card(canvas: Image.Image, player: pd.Series, pool_df: pd.DataFrame,
     name = fit_text(draw, str(player.get("player_name", "")).upper(), name_font, CARD_COL_W - 20)
     draw_text_centered(draw, cx, name_y + (_NAME_H - 27) // 2 - 2, name, name_font, WHITE, stroke_w=0)
 
-    # 4. Meta line: team · pos · MVP % · movement
+    # 4. Meta line: team · pos · movement
     y = name_y + _NAME_H + 4
     meta_font = _font("fg_demi", 20)
-    meta = f"{player.get('team', '')} · {player.get('position', '')} · MVP {pct_text(player.get('mvp_prob'))}  "
+    meta = f"{player.get('team', '')} · {player.get('position', '')}  "
     mw = text_w(draw, meta, meta_font)
     probe = Image.new("RGBA", (10, 10))
     move_w = draw_movement(ImageDraw.Draw(probe), 0, 0, player.get("movement", ""), 20)
@@ -340,11 +333,8 @@ def draw_compact_row(canvas: Image.Image, player: pd.Series, pool_df: pd.DataFra
     max_w = row_right - text_x - 14
 
     name_font = _font("agency_bold", 26)
-    name = fit_text(draw, str(player.get("player_name", "")).upper(), name_font, max_w - 70)
+    name = fit_text(draw, str(player.get("player_name", "")).upper(), name_font, max_w)
     draw.text((text_x, row_top + 12), name, font=name_font, fill=WHITE, stroke_width=1, stroke_fill=BLACK)
-    pf = _font("fg_demi", 22)
-    pct = pct_text(player.get("mvp_prob"))
-    draw.text((row_right - 18 - text_w(draw, pct, pf), row_top + 16), pct, font=pf, fill=GOLD)
 
     meta_font = _font("fg_med_cond", 17)
     meta = f"{player.get('team', '')} · {player.get('position', '')}   "

@@ -9,8 +9,9 @@ Pipeline
    (works from Week 1 and survives byes, unlike a fixed games floor).
 4. Counting stats (incl. games) projected to a SEASON_GAMES pace before scoring —
    the model was trained on full seasons; raw partial totals collapse it.
-5. Score with config.MODEL_TARGET; display probability = share of the top-10 total
-   (raw logreg output saturates near 100%).
+5. Score with config.MODEL_TARGET and rank. No probability is displayed: with
+   pace-projected stats the top-10 scores all sit at 0.99+, so any % shown
+   (share of total ≈ 10% each) carried no information. model_score is the raw output.
 
 Outputs (predictions/{year}/)
   top10_mvp_latest.csv       ← Google Sheet import
@@ -41,7 +42,7 @@ import nflreadpy as nfl
 from config import (
     CURRENT_YEAR, FEATURES, MODEL_TARGET, model_path, PREDICTIONS, CANDIDATES_CSV,
     SEASON_GAMES, MIN_TEAM_GAME_SHARE, BOARD_POSITIONS, TOP_N, CANDIDATE_POOL,
-    ARCHIVES_TO_KEEP, DISPLAY_PROB, DISPLAY_TEMPERATURE,
+    ARCHIVES_TO_KEEP,
 )
 from src.features import add_derived_features, feature_matrix
 
@@ -56,7 +57,7 @@ COUNTING_COLS = [
 # Columns written to top10_mvp_latest.csv, in order (the Sheet import contract)
 BOARD_COLS = [
     "player_key", "rank", "rank_delta", "movement", "player_name", "team", "position",
-    "mvp_prob", "model_score",
+    "model_score",
     "games", "team_games", "win_pct", "passer_rating", "total_tds", "td_int",
     "total_yards", "pass_ypg", "rush_yards",
     "season", "through_week", "updated_utc", "player_id",
@@ -181,16 +182,6 @@ def build_board(season: int, through_week: int | None = None) -> tuple[pd.DataFr
     return board, week
 
 
-def display_prob(score: pd.Series) -> pd.Series:
-    """Displayed MVP % for the top-N (see config.DISPLAY_PROB)."""
-    if DISPLAY_PROB == "softmax":
-        p = score.clip(1e-12, 1 - 1e-12)
-        z = np.log(p / (1 - p)) / DISPLAY_TEMPERATURE
-        e = np.exp(z - z.max())
-        return (e / e.sum()).round(4)
-    return (score / score.sum()).round(4)
-
-
 def add_movement(top: pd.DataFrame, prev_path: Path) -> pd.DataFrame:
     """rank_delta: +up / -down vs last week ("" if NEW); movement: ↑3 / ↓2 / – / NEW."""
     top = top.copy()
@@ -249,7 +240,6 @@ def run(season: int = CURRENT_YEAR, through_week: int | None = None,
                          f"no eligible {'/'.join(BOARD_POSITIONS)} found.")
 
     top = board.head(TOP_N).copy()
-    top["mvp_prob"] = display_prob(top["model_score"])
     top["model_score"] = top["model_score"].round(6)
     top["updated_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
@@ -265,7 +255,7 @@ def run(season: int = CURRENT_YEAR, through_week: int | None = None,
         old.unlink()
 
     print(f"\n=== {season} NFL MVP — through Week {week} ===")
-    show = ["rank", "movement", "player_name", "team", "position", "mvp_prob",
+    show = ["rank", "movement", "player_name", "team", "position",
             "games", "team_games", "win_pct", "passer_rating", "total_tds", "total_yards"]
     print(top[show].to_string(index=False))
     print(f"\nSaved -> {latest}")
