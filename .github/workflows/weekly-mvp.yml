@@ -1,6 +1,6 @@
 # .github/workflows/weekly-mvp.yml
 # ---------------------------------------------------------------
-# Weekly NFL MVP board. Runs Tuesdays 15:00 UTC (after Monday Night
+# Weekly NFL MVP board. Runs Tuesdays 15:17 UTC (after Monday Night
 # Football) from September through February, plus manual runs.
 #
 # What it does:
@@ -24,7 +24,7 @@ name: Weekly NFL MVP Prediction
 
 on:
   schedule:
-    - cron: "0 15 * 9-12,1-2 2"   # Tuesdays 15:00 UTC, Sep–Feb
+    - cron: "17 15 * 9-12,1-2 2"  # Tuesdays 15:17 UTC, Sep–Feb (off :00, when GitHub delays/drops schedules)
   workflow_dispatch: {}
 
 permissions:
