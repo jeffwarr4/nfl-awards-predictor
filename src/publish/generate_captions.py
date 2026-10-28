@@ -1,6 +1,6 @@
 """
 Generate a ready-to-paste Instagram/Facebook caption with hashtags for the
-weekly NFL MVP board graphic.
+weekly NFL MVP carousel: slide 1 the top-10 board, slide 2 "On the Bubble" (ranks 11–15).
 
 Port of mlb-awards-predictor/src/generate_captions.py (one board instead of
 four award/league graphics).
@@ -10,7 +10,7 @@ Output:
 
 Skipped with a warning when ANTHROPIC_API_KEY is not set.
 
-Run standalone (from the latest board + chips):
+Run standalone (from the latest 30-deep board, else the top 10, + chips):
     python -m src.publish.generate_captions
 """
 
@@ -25,7 +25,7 @@ from typing import Optional
 
 import pandas as pd
 
-from config import CURRENT_PRED_DIR
+from config import BUBBLE_RANKS, CURRENT_PRED_DIR
 from src.publish.generate_chips import CLAUDE_MODEL
 from src.publish.stats import stat_line
 
@@ -42,8 +42,8 @@ TEAM_HASHTAGS = {
 
 SYSTEM_PROMPT = """You are a sports social media manager for STINGER, an NFL awards prediction tracker.
 
-Write the weekly update post for our NFL MVP board graphic. Produce:
-1. A punchy caption body — 2 sentences max, under 220 characters total. Data-driven and slightly hype. Reference actual stats from the input. No filler ("Let's dive in!", "Check this out!"). 1-2 emoji max. Do NOT include hashtags in the body.
+Write the weekly update post for our NFL MVP carousel: slide 1 is the top-10 board, slide 2 is "On the Bubble" (ranks 11-15, the players knocking on the door). Produce:
+1. A punchy caption body — 3 sentences max, under 320 characters total. The first 1-2 sentences cover the top of the board (slide 1). The last sentence names the top bubble player and why they're close to the top 10 (slide 2). Data-driven and slightly hype. Reference actual stats from the input. You may use the history note for context, but don't force it. No filler ("Let's dive in!", "Check this out!"). 1-2 emoji max. Do NOT include hashtags in the body.
 2. 15 hashtags for Instagram. Choose ONLY from the approved base tags below plus the player-name and team tags given in the user message. Do NOT invent tags that aren't in the approved list or given in the message.
 3. 5 hashtags for Facebook — the 5 most relevant from your Instagram list (favour generic NFL + award tags over player/team specifics).
 
@@ -56,24 +56,38 @@ Output ONLY valid JSON in exactly this shape, no markdown fences, no preamble:
 {{"caption": "...", "hashtags_instagram": ["#tag1", ...], "hashtags_facebook": ["#tag1", ...]}}"""
 
 
-def _build_prompt(top10: pd.DataFrame, chip_df: pd.DataFrame, week: int) -> str:
+# Context for the bubble sentence (from the 2010–2025 week-by-week replay).
+BUBBLE_HISTORY = ("2012 Adrian Peterson was #15 at Week 8 and won MVP; "
+                  "2025 Trevor Lawrence was #25 at Week 8 and finished 5th.")
+
+
+def _build_prompt(board: pd.DataFrame, chip_df: pd.DataFrame, week: int) -> str:
     whys = dict(zip(chip_df["player_key"], chip_df["Why"])) if not chip_df.empty else {}
-    lines = [f"NFL MVP board — through Week {week}", "", "Top 3 contenders:"]
-    for _, p in top10.sort_values("rank").head(3).iterrows():
-        line = f"#{int(p['rank'])} {p['player_name']} ({p['team']} {p['position']}): {stat_line(p)}"
+    board = board.sort_values("rank")
+
+    def line(p: pd.Series) -> str:
+        out = f"#{int(p['rank'])} {p['player_name']} ({p['team']} {p['position']}): {stat_line(p)}"
         if isinstance(whys.get(p["player_key"]), str) and whys[p["player_key"]]:
-            line += f"  | {whys[p['player_key']]}"
-        lines.append(line)
-    top3 = top10.sort_values("rank").head(3)
+            out += f"  | {whys[p['player_key']]}"
+        return out
+
+    lines = [f"NFL MVP board — through Week {week}", "", "Slide 1 — top 3 contenders:"]
+    lines += [line(p) for _, p in board.head(3).iterrows()]
+    bubble = board[board["rank"].between(*BUBBLE_RANKS)]
+    if not bubble.empty:
+        lines += ["", f"Slide 2 — On the Bubble (ranks {BUBBLE_RANKS[0]}-{BUBBLE_RANKS[1]}):"]
+        lines += [line(p) for _, p in bubble.iterrows()]
+        lines += ["", f"History note: {BUBBLE_HISTORY}"]
+    top3 = board.head(3)
     name_tags = " ".join("#" + re.sub(r"[^A-Za-z0-9]", "", n) for n in top3["player_name"])
     team_tags = " ".join(TEAM_HASHTAGS[t] for t in top3["team"] if t in TEAM_HASHTAGS)
     lines += ["", f"Player tags: {name_tags}", f"Team tags: {team_tags}"]
     return "\n".join(lines)
 
 
-def generate_caption(client, top10: pd.DataFrame, chip_df: pd.DataFrame,
+def generate_caption(client, board: pd.DataFrame, chip_df: pd.DataFrame,
                      season: int, week: int, retries: int = 2) -> Optional[dict]:
-    prompt = _build_prompt(top10, chip_df, week)
+    prompt = _build_prompt(board, chip_df, week)
     system = SYSTEM_PROMPT.format(year=season, week=week)
     for attempt in range(retries + 1):
         try:
@@ -95,15 +109,16 @@ def generate_caption(client, top10: pd.DataFrame, chip_df: pd.DataFrame,
             time.sleep(1.5)
 
 
-def generate_caption_file(top10: pd.DataFrame, chip_df: pd.DataFrame, gfx_dir: Path,
+def generate_caption_file(board: pd.DataFrame, chip_df: pd.DataFrame, gfx_dir: Path,
                           season: int, week: int) -> Optional[Path]:
+    """board: the 30-deep board (a top-10-only board still works; slide 2 is then omitted)."""
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("[WARN] ANTHROPIC_API_KEY not set — caption generation skipped")
         return None
 
     from anthropic import Anthropic
     print("  Generating caption: NFL MVP")
-    data = generate_caption(Anthropic(), top10, chip_df, season, week)
+    data = generate_caption(Anthropic(), board, chip_df, season, week)
     if data is None:
         return None
 
@@ -121,7 +136,8 @@ def generate_caption_file(top10: pd.DataFrame, chip_df: pd.DataFrame, gfx_dir: P
 
 
 if __name__ == "__main__":
-    top = pd.read_csv(CURRENT_PRED_DIR / "top10_mvp_latest.csv")
+    deep = CURRENT_PRED_DIR / "board_mvp_latest.csv"
+    top = pd.read_csv(deep if deep.exists() else CURRENT_PRED_DIR / "top10_mvp_latest.csv")
     chip_path = CURRENT_PRED_DIR / "chip_data" / "chip_data_latest.csv"
     chips = pd.read_csv(chip_path) if chip_path.exists() else pd.DataFrame(columns=["player_key", "Why"])
     generate_caption_file(top, chips, CURRENT_PRED_DIR / "graphics",

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 An NFL MVP predictor: trains on 2000–2025 season stats + AP MVP vote tables, scores the live season weekly,
 and publishes a top-10 board (CSV for a Google Sheet, an AI-written chip/why/caption, and a rendered 1080×1350
-social graphic). Mirrors the patterns of the sibling `mlb-awards-predictor` repo; headshots and logos come from
+social graphic), a 30-deep board CSV, and a second "On the Bubble" slide for ranks 11–15. Mirrors the patterns of the sibling `mlb-awards-predictor` repo; headshots and logos come from
 the sibling `stinger-assets` repo. The 2026 rebuild rationale and backtests are in
 `docs/nfl-2026-evaluation-and-plan.md`.
 
@@ -67,15 +67,25 @@ winner #1 / top-3 / top-5 / mean rank — AUC is deliberately not reported (~1 p
    reintroduce one without a calibration that holds up in-season.
 
 **Outputs (`predictions/{year}/`)** — `top10_mvp_latest.csv` is the Google Sheet import; its column order is
-`BOARD_COLS` in `predict_current.py` (a contract — don't rename casually). Plus 4 rolling timestamped archives,
-`chip_data/`, `graphics/mvp_board_{year}_wk{NN}.png` + `mvp_board_latest.png`, `graphics/caption_mvp.txt`.
-`.prev_top10_mvp.csv` is the movement baseline: it is rolled forward only when `through_week` advances, so a
-same-week rerun keeps last week's arrows. Deleting it resets every row to NEW.
+`BOARD_COLS` in `predict_current.py` (a contract — don't rename casually). `board_mvp_latest.csv` is the same
+columns `BOARD_DEPTH` (30) deep — a 2010–2025 replay showed every eventual winner top-15 by Week 8 and top-30
+covering 98–100% of top-5 vote finishers from Week 4. Each has 4 rolling timestamped archives. Plus
+`chip_data/`, `graphics/mvp_board_{year}_wk{NN}.png` + `mvp_board_latest.png`,
+`graphics/bubble_board_{year}_wk{NN}.png` + `bubble_board_latest.png`, `graphics/caption_mvp.txt` (covers
+the two-slide carousel). `.prev_board_mvp.csv` (30 rows) is the movement baseline: it is rolled forward only
+when `through_week` advances, so a same-week rerun keeps last week's arrows. Deleting it resets every row to NEW.
+Until it first exists, the old 10-row `.prev_top10_mvp.csv` is read instead (and deleted on the first roll).
+
+**On the Bubble slide.** `render_bubble_graphic` pastes circular headshots for `BUBBLE_RANKS` into
+`MVP Bubble NFL.png`, composites `MVP Bubble NFL overlay.png` (rings, gloss) over them, then draws badges and
+labels. All geometry comes from `assets/bubble_slots.json`. `src/publish/make_bubble_bg.py` regenerates the
+background, overlay and JSON and renders a reference preview. Bubble players get a Why (≤45 chars, enforced
+in code) but no chips, in the same `chip_data_latest.csv`.
 
 **stinger-assets contract.** `player_key = firstname_lastname_team` (nflreadpy team code, lowercased) and must
 equal `safe_filename(f"{name} {team}")` in `stinger-assets/sync_espn_headshots.py` (apostrophes/periods dropped,
-hyphens split). `predictions/nfl_candidates.csv` (top 25 eligible, not just top 10, so headshots exist before a
-player climbs) is pulled by stinger-assets' Monday sync. Logos are ESPN-named and lowercase; nflreadpy `LA`/`WAS`
+hyphens split). `predictions/nfl_candidates.csv` (top 30 eligible — everyone on the saved board — so headshots
+exist before a player climbs) is pulled by stinger-assets' Monday sync. Logos are ESPN-named and lowercase; nflreadpy `LA`/`WAS`
 map to ESPN `lar`/`wsh` (`src/publish/stats.py: ESPN_TEAM_CODES`). The runner is case-sensitive; Windows isn't.
 
 **Training-data gotchas.** nflverse labels 2000–2002 player rows with current franchise codes (`LV`/`LA`/`LAC`)
@@ -90,4 +100,4 @@ while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` brid
 `.github/workflows/weekly-mvp.yml`: Tuesdays 15:17 UTC (kept off :00, when GitHub delays scheduled runs), Sep–Feb, plus manual dispatch. Checks out
 stinger-assets as a sibling (`STINGER_ASSETS_DIR`), runs `predict_current`, fails if the board is empty (the
 script also exits non-zero before overwriting the last good board), uploads CSV/PNG/TXT artifacts, and commits
-`predictions/` with `[skip ci]`. Needs the `ANTHROPIC_API_KEY` secret for chips/captions.
+`predictions/` (plus `git add -f` of `.prev_board_mvp.csv`) with `[skip ci]`. Needs the `ANTHROPIC_API_KEY` secret for chips/captions.

@@ -1,0 +1,113 @@
+{
+  "canvas": [
+    1080,
+    1350
+  ],
+  "slots": [
+    {
+      "rank": 11,
+      "cx": 300,
+      "cy": 470,
+      "d": 330,
+      "label_box": [
+        115,
+        643,
+        485,
+        739
+      ],
+      "rank_badge": [
+        183,
+        586
+      ],
+      "logo_badge": [
+        416,
+        353
+      ]
+    },
+    {
+      "rank": 12,
+      "cx": 790,
+      "cy": 535,
+      "d": 290,
+      "label_box": [
+        625,
+        688,
+        955,
+        784
+      ],
+      "rank_badge": [
+        687,
+        637
+      ],
+      "logo_badge": [
+        892,
+        432
+      ]
+    },
+    {
+      "rank": 13,
+      "cx": 545,
+      "cy": 918,
+      "d": 255,
+      "label_box": [
+        395,
+        1053,
+        695,
+        1149
+      ],
+      "rank_badge": [
+        455,
+        1007
+      ],
+      "logo_badge": [
+        634,
+        828
+      ]
+    },
+    {
+      "rank": 14,
+      "cx": 215,
+      "cy": 1075,
+      "d": 225,
+      "label_box": [
+        65,
+        1195,
+        365,
+        1291
+      ],
+      "rank_badge": [
+        135,
+        1154
+      ],
+      "logo_badge": [
+        294,
+        995
+      ]
+    },
+    {
+      "rank": 15,
+      "cx": 870,
+      "cy": 1085,
+      "d": 200,
+      "label_box": [
+        720,
+        1193,
+        1020,
+        1289
+      ],
+      "rank_badge": [
+        799,
+        1155
+      ],
+      "logo_badge": [
+        940,
+        1014
+      ]
+    }
+  ],
+  "footer": {
+    "cx": 540,
+    "cy": 1255
+  },
+  "notes": "Sizes fixed by rank (#11 largest). Paste circular headshot into each slot, then composite 'MVP Bubble NFL overlay.png' on top."
+}

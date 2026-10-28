@@ -11,6 +11,8 @@ Assets come from stinger-assets (STINGER_ASSETS_DIR):
 
 Outputs: predictions/{year}/graphics/mvp_board_latest.png
          predictions/{year}/graphics/mvp_board_{year}_wk{NN}.png
+         predictions/{year}/graphics/bubble_board_latest.png        ("On the Bubble", ranks 11–15)
+         predictions/{year}/graphics/bubble_board_{year}_wk{NN}.png
 
 Run standalone (from the latest board + chips):
     python -m src.publish.render_graphics
@@ -18,6 +20,7 @@ Run standalone (from the latest board + chips):
 
 from __future__ import annotations
 
+import json
 import textwrap
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
@@ -25,7 +28,10 @@ from typing import Dict, List, Optional, Tuple
 import pandas as pd
 from PIL import Image, ImageDraw, ImageFont
 
-from config import BOARD_BACKGROUND, CURRENT_PRED_DIR, FONTS_DIR, STINGER_ASSETS_DIR
+from config import (
+    BOARD_BACKGROUND, BUBBLE_BACKGROUND, BUBBLE_OVERLAY, BUBBLE_RANKS, BUBBLE_SLOTS,
+    CURRENT_PRED_DIR, FONTS_DIR, STINGER_ASSETS_DIR,
+)
 from src.publish.stats import ESPN_TEAM_CODES, STAT_COLS, STAT_LABELS, format_stat
 
 HEADSHOTS_DIR = STINGER_ASSETS_DIR / "nfl" / "headshots"
@@ -163,10 +169,11 @@ def fit_text(draw, text, font, max_w) -> str:
     return text
 
 
-def draw_rank_badge(canvas: Image.Image, cx: int, cy: int, r: int, rank: int, size: int):
+def draw_rank_badge(canvas: Image.Image, cx: int, cy: int, r: int, rank: int, size: int,
+                    outline_w: int = 2):
     bl = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
     ImageDraw.Draw(bl).ellipse((cx - r, cy - r, cx + r, cy + r),
-                               fill=(*GOLD, 255), outline=(*BLACK, 255), width=2)
+                               fill=(*GOLD, 255), outline=(*BLACK, 255), width=outline_w)
     canvas.alpha_composite(bl)
     draw = ImageDraw.Draw(canvas)
     font = _font("agency_bold", size)
@@ -438,9 +445,131 @@ def render_board(top10: pd.DataFrame, chip_df: pd.DataFrame, gfx_dir: Path,
     return out
 
 
+# ─────────────────────────────────────────────────────────────────
+# "ON THE BUBBLE" SLIDE — ranks BUBBLE_RANKS, ported from make_bubble_bg.py
+# ─────────────────────────────────────────────────────────────────
+def circle_headshot(img: Image.Image, d: int) -> Image.Image:
+    """Circular crop of the upper-centre square (the face on an ESPN 600×436), d×d."""
+    w, h = img.size
+    side = int(h * 0.92)
+    x0 = (w - side) // 2
+    img = img.crop((x0, 0, x0 + side, side)).resize((d, d), Image.LANCZOS)
+    m = Image.new("L", (d, d), 0)
+    ImageDraw.Draw(m).ellipse((0, 0, d - 1, d - 1), fill=255)
+    out = Image.new("RGBA", (d, d), (0, 0, 0, 0))
+    out.paste(img, (0, 0), Image.composite(img.getchannel("A"), m, m))
+    return out
+
+
+def _bubble_headshot(player_key: str, d: int) -> Image.Image:
+    try:
+        img = Image.open(HEADSHOTS_DIR / f"{player_key}.png").convert("RGBA")
+    except Exception:
+        img = load_headshot_placeholder(600)
+    return circle_headshot(img, d)
+
+
+def draw_bubble_label(canvas: Image.Image, slot: dict, player: pd.Series, why: Optional[str]):
+    """Name / TEAM · POS + movement / gold Why, centred in the slot's label_box."""
+    draw = ImageDraw.Draw(canvas)
+    lb = slot["label_box"]
+    cx, max_w = (lb[0] + lb[2]) // 2, lb[2] - lb[0] - 16
+
+    nf = _font("agency_bold", 30 if slot["d"] > 240 else 26)
+    name = fit_text(draw, str(player.get("player_name", "")).upper(), nf, max_w)
+    draw.text((cx - text_w(draw, name, nf) // 2, lb[1] + 6), name, font=nf, fill=WHITE,
+              stroke_width=1, stroke_fill=BLACK)
+
+    mf = _font("fg_demi_cond", 22)
+    meta = f"{player.get('team', '')} · {player.get('position', '')}  "
+    probe = Image.new("RGBA", (10, 10))
+    move_w = draw_movement(ImageDraw.Draw(probe), 0, 0, player.get("movement", ""), 22)
+    x = cx - (text_w(draw, meta, mf) + move_w) // 2
+    draw.text((x, lb[1] + 44), meta, font=mf, fill=GREY)
+    draw_movement(draw, x + text_w(draw, meta, mf), lb[1] + 44, player.get("movement", ""), 22)
+
+    if isinstance(why, str) and why.strip():
+        wf = _font("fg_med_cond", 20)
+        wt = fit_text(draw, why.strip(), wf, max_w)
+        draw.text((cx - text_w(draw, wt, wf) // 2, lb[1] + 68), wt, font=wf, fill=GOLD)
+
+
+def render_bubble_graphic(board: pd.DataFrame, chip_df: pd.DataFrame, gfx_dir: Path,
+                          season: int, week: int) -> Optional[Path]:
+    """Ranks BUBBLE_RANKS from the deep board → bubble_board_{season}_wk{NN}.png.
+    Geometry comes from assets/bubble_slots.json; the overlay (gold rings, gloss)
+    is composited over the headshots. Bubbles with no player stay empty."""
+    lo, hi = BUBBLE_RANKS
+    df = board[board["rank"].between(lo, hi)]
+    if df.empty:
+        print(f"  No players ranked {lo}–{hi} — skipping bubble graphic")
+        return None
+    if not BUBBLE_BACKGROUND.exists() or not BUBBLE_SLOTS.exists():
+        print(f"  [WARN] {BUBBLE_BACKGROUND.name} or {BUBBLE_SLOTS.name} not found — skipping bubble graphic")
+        return None
+
+    layout = json.loads(BUBBLE_SLOTS.read_text(encoding="utf-8"))
+    canvas = Image.open(BUBBLE_BACKGROUND).convert("RGBA")
+    players = {int(p["rank"]): p for _, p in df.iterrows()}
+    slots = [s for s in layout["slots"] if s["rank"] in players]
+    whys: Dict[str, str] = {}
+    if chip_df is not None and not chip_df.empty and "Why" in chip_df.columns:
+        whys = dict(zip(chip_df["player_key"], chip_df["Why"]))
+
+    missing = [k for k in (str(players[s["rank"]]["player_key"]) for s in slots)
+               if not (HEADSHOTS_DIR / f"{k}.png").exists()]
+    if missing:
+        print(f"  [WARN] {len(missing)} bubble headshot(s) not in {HEADSHOTS_DIR}: {', '.join(missing)}")
+
+    # 1. Headshots into the wells, then rings + gloss over them
+    for s in slots:
+        r = s["d"] // 2
+        canvas.alpha_composite(_bubble_headshot(str(players[s["rank"]]["player_key"]), s["d"] - 8),
+                               (s["cx"] - r + 4, s["cy"] - r + 4))
+    if BUBBLE_OVERLAY.exists():
+        canvas = Image.alpha_composite(canvas, Image.open(BUBBLE_OVERLAY).convert("RGBA"))
+    else:
+        print(f"  [WARN] {BUBBLE_OVERLAY.name} not found — bubbles drawn without rings")
+
+    # 2. Logo badge (~1:30 on the ring), rank badge (~7:30), label
+    for s in slots:
+        p = players[s["rank"]]
+        draw = ImageDraw.Draw(canvas)
+        bx, by = s["logo_badge"]
+        br = max(30, s["d"] // 7)
+        draw.ellipse((bx - br, by - br, bx + br, by + br), fill=(15, 25, 15), outline=GOLD, width=3)
+        logo = load_logo(str(p.get("team", "")), int(br * 1.5))
+        canvas.alpha_composite(logo, (bx - logo.width // 2, by - logo.height // 2))
+
+        rx, ry = s["rank_badge"]
+        rr = max(26, s["d"] // 9)
+        draw_rank_badge(canvas, rx, ry, rr, s["rank"], int(rr * 0.95), outline_w=3)
+        draw_bubble_label(canvas, s, p, whys.get(p["player_key"]))
+
+    # 3. Footer
+    draw = ImageDraw.Draw(canvas)
+    fx, fy = layout["footer"]["cx"], layout["footer"]["cy"]
+    f1, f2 = _font("agency_bold", 24), _font("fg_med_cond", 16)
+    t1, t2 = f"STATS THROUGH WEEK {week}", "Bubble size = closeness to the top 10"
+    draw.text((fx - text_w(draw, t1, f1) // 2, fy - 14), t1, font=f1, fill=GOLD,
+              stroke_width=1, stroke_fill=BLACK)
+    draw.text((fx - text_w(draw, t2, f2) // 2, fy + 20), t2, font=f2, fill=GREY)
+
+    gfx_dir.mkdir(parents=True, exist_ok=True)
+    out = gfx_dir / f"bubble_board_{season}_wk{week:02d}.png"
+    final = canvas.convert("RGB")
+    final.save(out, "PNG")
+    final.save(gfx_dir / "bubble_board_latest.png", "PNG")
+    print(f"Bubble graphic -> {out}")
+    return out
+
+
 if __name__ == "__main__":
     top = pd.read_csv(CURRENT_PRED_DIR / "top10_mvp_latest.csv")
     chip_path = CURRENT_PRED_DIR / "chip_data" / "chip_data_latest.csv"
     chips = pd.read_csv(chip_path) if chip_path.exists() else pd.DataFrame()
-    render_board(top, chips, CURRENT_PRED_DIR / "graphics",
-                 int(top["season"].iloc[0]), int(top["through_week"].iloc[0]))
+    season, week = int(top["season"].iloc[0]), int(top["through_week"].iloc[0])
+    render_board(top, chips, CURRENT_PRED_DIR / "graphics", season, week)
+    deep_path = CURRENT_PRED_DIR / "board_mvp_latest.csv"
+    if deep_path.exists():
+        render_bubble_graphic(pd.read_csv(deep_path), chips, CURRENT_PRED_DIR / "graphics", season, week)

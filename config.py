@@ -32,6 +32,12 @@ CANDIDATES_CSV   = PREDICTIONS / "nfl_candidates.csv"   # fetched by stinger-ass
 # render_graphics.py draws a plain dark placeholder.
 BOARD_BACKGROUND = ROOT_DIR / "MVP Awards NFL.png"
 
+# "On the Bubble" slide (ranks BUBBLE_RANKS). Background + overlay + slot geometry
+# come from src/publish/make_bubble_bg.py; the overlay is composited over headshots.
+BUBBLE_BACKGROUND = ROOT_DIR / "MVP Bubble NFL.png"
+BUBBLE_OVERLAY    = ROOT_DIR / "MVP Bubble NFL overlay.png"
+BUBBLE_SLOTS      = ROOT_DIR / "assets" / "bubble_slots.json"
+
 # Sibling repo with headshots/logos. CI checks it out and sets the env var.
 STINGER_ASSETS_DIR = Path(os.environ.get(
     "STINGER_ASSETS_DIR",
@@ -71,5 +77,9 @@ SEASON_GAMES        = 17      # counting stats are projected to this pace
 MIN_TEAM_GAME_SHARE = 0.60    # must have played ≥60% of his team's games
 BOARD_POSITIONS     = ("QB", "RB")
 TOP_N               = 10
-CANDIDATE_POOL      = 25      # headshots pre-queued for the top-N eligible players
+# Saved board depth. 2010–2025 replay: every eventual winner was top-15 by Week 8,
+# every top-5 vote finisher top-26 from Week 8 on; top 30 covers 98–100% from Week 4.
+BOARD_DEPTH         = 30
+BUBBLE_RANKS        = (11, 15)  # inclusive; the "On the Bubble" slide
+CANDIDATE_POOL      = 30      # headshots pre-queued for everyone on the saved board
 ARCHIVES_TO_KEEP    = 4

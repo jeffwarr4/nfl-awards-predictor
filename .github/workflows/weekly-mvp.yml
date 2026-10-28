@@ -7,7 +7,8 @@
 #   1. Sets up Python + dependencies
 #   2. Checks out stinger-assets (headshots + logos for the graphic)
 #   3. Runs src/Predictions/predict_current.py → predictions/{year}/:
-#      top10 CSVs, chips, board PNG, caption; predictions/nfl_candidates.csv
+#      top10 + 30-deep board CSVs, movement snapshot, chips, board + bubble
+#      PNGs, carousel caption; predictions/nfl_candidates.csv
 #   4. Fails loudly if the top-10 board is empty
 #   5. Uploads CSVs + PNGs + captions as artifacts
 #   6. Commits predictions/ back to the repo with [skip ci]
@@ -90,6 +91,7 @@ jobs:
           path: |
             predictions/**/*.csv
             predictions/**/*.png
+            predictions/**/bubble_board_*.png
             predictions/**/*.txt
           retention-days: 90
           if-no-files-found: warn
@@ -98,7 +100,12 @@ jobs:
         run: |
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          YEAR=$(python -c "import config; print(config.CURRENT_YEAR)")
           git add predictions/
+          # Hidden movement baseline (30 rows); -f in case a global ignore covers dotfiles
+          if [ -f "predictions/${YEAR}/.prev_board_mvp.csv" ]; then
+            git add -f "predictions/${YEAR}/.prev_board_mvp.csv"
+          fi
           if git diff --staged --quiet; then
             echo "No changes to commit."
           else
