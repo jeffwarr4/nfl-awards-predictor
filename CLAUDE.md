@@ -79,8 +79,8 @@ Until it first exists, the old 10-row `.prev_top10_mvp.csv` is read instead (and
 **On the Bubble slide.** `render_bubble_graphic` pastes circular headshots for `BUBBLE_RANKS` into
 `MVP Bubble NFL.png`, composites `MVP Bubble NFL overlay.png` (rings, gloss) over them, then draws badges and
 labels. All geometry comes from `assets/bubble_slots.json`. `src/publish/make_bubble_bg.py` regenerates the
-background, overlay and JSON and renders a reference preview. Bubble players get a Why (≤45 chars, enforced
-in code) but no chips, in the same `chip_data_latest.csv`.
+background, overlay and JSON and renders a reference preview. Bubble players get a Why (≤75 chars, enforced
+in code; wrapped to two lines on the slide) but no chips, in the same `chip_data_latest.csv`.
 
 **stinger-assets contract.** `player_key = firstname_lastname_team` (nflreadpy team code, lowercased) and must
 equal `safe_filename(f"{name} {team}")` in `stinger-assets/sync_espn_headshots.py` (apostrophes/periods dropped,

@@ -43,7 +43,7 @@ Rules:
 {"chip": "Tag1 | Tag2 | Tag3", "why": "One sentence explanation."}"""
 
 
-BUBBLE_WHY_MAX = 45   # fits the smallest bubble label plate (#15, 300 px)
+BUBBLE_WHY_MAX = 75   # two wrapped lines on the narrowest bubble label plate (330 px)
 
 BUBBLE_SYSTEM_PROMPT = f"""You write a one-line "Why" for players ranked just outside the top 10 of an NFL MVP prediction board ("On the Bubble").
 
@@ -51,7 +51,8 @@ Rules:
 - At most {BUBBLE_WHY_MAX} characters, including spaces. Shorter is better. No ending period.
 - Stats only: use ONLY the numbers given in the user message. Never invent, infer, or assume a stat.
 - When the stats show it, say what is keeping the player out of the top 10 (e.g. team record, TD total, vs the #10 player's line). Otherwise name their best stat.
-- No player name, no rank number, no hype adjectives.
+- Never mention this player's name or any rank number (no "#10"). Refer to the comparison player by last name only.
+- No hype adjectives.
 - Output ONLY valid JSON in exactly this shape, nothing else, no markdown fences, no preamble:
 {{"why": "Short line"}}"""
 
@@ -98,7 +99,7 @@ def build_bubble_message(player: pd.Series, cutoff: pd.Series | None) -> str:
            f"Games: {int(player['games'])} of {int(player['team_games'])} team games\n"
            f"Stats: {stat_line(player)}")
     if cutoff is not None:
-        msg += (f"\n\nFor comparison, #{int(cutoff['rank'])} {cutoff['player_name']} "
+        msg += (f"\n\nFor comparison, the last player inside the top 10: {cutoff['player_name']} "
                 f"({cutoff['position']}, team record {_record(cutoff)}): {stat_line(cutoff)}")
     return msg
 

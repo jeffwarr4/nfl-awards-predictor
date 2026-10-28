@@ -28,15 +28,15 @@ def font(name, size):
 #    sinking toward #15. Zig-zag so labels never sit under another bubble.
 SLOTS = [
     {"rank": 11, "cx": 300, "cy": 470,  "d": 330},
-    {"rank": 12, "cx": 790, "cy": 535,  "d": 290},
+    {"rank": 12, "cx": 790, "cy": 525,  "d": 290},
     {"rank": 13, "cx": 545, "cy": 918,  "d": 255},
     {"rank": 14, "cx": 215, "cy": 1075, "d": 225},
     {"rank": 15, "cx": 870, "cy": 1085, "d": 200},
 ]
-LABEL_H = 96
+LABEL_H = 112  # name + meta + up to two Why lines
 for s in SLOTS:
     r = s["d"] // 2
-    lw = max(s["d"] + 40, 300)
+    lw = max(s["d"] + 40, 330)
     s["label_box"] = [s["cx"] - lw // 2, s["cy"] + r + 8, s["cx"] + lw // 2, s["cy"] + r + 8 + LABEL_H]
     a = math.radians(135)  # rank badge at ~7:30 on the ring
     s["rank_badge"] = [int(s["cx"] + r * math.cos(a)), int(s["cy"] + r * math.sin(a))]
@@ -171,12 +171,23 @@ for s, (_, p) in zip(SLOTS, board.iterrows()):
     x = cx - (bb1[2] + bb2[2]) // 2
     d.text((x, lb[1] + 44), meta, font=mf, fill=GREY)
     d.text((x + bb1[2], lb[1] + 44), mv, font=mf, fill=UP if mv.startswith("↑") else DOWN if mv.startswith("↓") else GOLD)
-    wf = font("bc_med", 20); wt = whys[int(p['rank'])]; bb = d.textbbox((0, 0), wt, font=wf)
-    if bb[2] - bb[0] > lb[2] - lb[0] - 16:
-        while bb[2] - bb[0] > lb[2] - lb[0] - 16:
-            wt = wt[:-1].rstrip(); bb = d.textbbox((0, 0), wt + "…", font=wf)
-        wt += "…"
-    d.text((cx - (bb[2] - bb[0]) // 2, lb[1] + 68), wt, font=wf, fill=GOLD)
+    # Why: greedy word-wrap to two lines; ellipsis only if it still overflows
+    wf = font("bc_med", 20); maxw = lb[2] - lb[0] - 16
+    tw = lambda t: d.textbbox((0, 0), t, font=wf)[2]
+    lines, cur = [], ""
+    for word in whys[int(p['rank'])].split():
+        if cur and tw(cur + " " + word) > maxw:
+            lines.append(cur); cur = word
+        else:
+            cur = f"{cur} {word}".strip()
+    lines.append(cur)
+    if len(lines) > 2:
+        last = " ".join(lines[1:])
+        while tw(last + "…") > maxw:
+            last = last[:-1].rstrip()
+        lines = [lines[0], last + "…"]
+    for i, wt in enumerate(lines):
+        d.text((cx - tw(wt) // 2, lb[1] + 66 + i * 21), wt, font=wf, fill=GOLD)
 f1, f2 = font("oswald", 24), font("bc_med", 16)
 for t, fnt, col, y in (("STATS THROUGH WEEK 7", f1, GOLD, FOOTER["cy"] - 14), ("Bubble size = closeness to the top 10", f2, GREY, FOOTER["cy"] + 20)):
     bb = d.textbbox((0, 0), t, font=fnt); d.text((FOOTER["cx"] - (bb[2] - bb[0]) // 2, y), t, font=fnt, fill=col, stroke_width=1 if fnt is f1 else 0, stroke_fill=BLACK)
