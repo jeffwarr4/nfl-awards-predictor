@@ -50,8 +50,8 @@ BUBBLE_SYSTEM_PROMPT = f"""You write a one-line "Why" for players ranked just ou
 Rules:
 - At most {BUBBLE_WHY_MAX} characters, including spaces. Shorter is better. No ending period.
 - Stats only: use ONLY the numbers given in the user message. Never invent, infer, or assume a stat.
-- When the stats show it, say what is keeping the player out of the top 10 (e.g. team record, TD total, vs the #10 player's line). Otherwise name their best stat.
-- Never mention this player's name or any rank number (no "#10"). Refer to the comparison player by last name only.
+- When the stats show it, say what is keeping the player out of the top 10 (e.g. team record, TD total). You may use the comparison player (the lowest-ranked top-10 player at the same position), but only when it makes the point clearer; if the player's own numbers tell the story better (e.g. a strong record or a standout stat), use those instead.
+- Never use this player's own name, first or last; the graphic already shows it. Never mention a rank number (no "#10"). Refer to the comparison player by last name only.
 - No hype adjectives.
 - Output ONLY valid JSON in exactly this shape, nothing else, no markdown fences, no preamble:
 {{"why": "Short line"}}"""
@@ -70,6 +70,12 @@ def build_user_message(player: pd.Series) -> str:
             f"Stats: {stat_line(player)}")
 
 
+def _parse_json(text: str) -> dict:
+    """First JSON object in the reply; ignores code fences and any trailing commentary."""
+    text = re.sub(r"^```json|```$", "", text.strip()).strip()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]
+
+
 def generate_chip_for_player(client, player: pd.Series, retries: int = 2) -> dict:
     message = build_user_message(player)
     for attempt in range(retries + 1):
@@ -83,7 +89,7 @@ def generate_chip_for_player(client, player: pd.Series, retries: int = 2) -> dic
             block = next((b for b in resp.content if hasattr(b, "text")), None)
             if block is None:
                 raise ValueError("No text block in response")
-            data = json.loads(re.sub(r"^```json|```$", "", block.text.strip()).strip())
+            data = _parse_json(block.text)
             return {"chip": data["chip"], "why": data["why"]}
         except Exception as e:
             if attempt == retries:
@@ -92,15 +98,15 @@ def generate_chip_for_player(client, player: pd.Series, retries: int = 2) -> dic
             time.sleep(1.5)
 
 
-def build_bubble_message(player: pd.Series, cutoff: pd.Series | None) -> str:
+def build_bubble_message(player: pd.Series, comp: pd.Series | None) -> str:
     msg = (f"Player: {player['player_name']} ({player['team']}, {player['position']})\n"
            f"Rank: #{int(player['rank'])}, just outside the top 10\n"
            f"Team record: {_record(player)}\n"
            f"Games: {int(player['games'])} of {int(player['team_games'])} team games\n"
            f"Stats: {stat_line(player)}")
-    if cutoff is not None:
-        msg += (f"\n\nFor comparison, the last player inside the top 10: {cutoff['player_name']} "
-                f"({cutoff['position']}, team record {_record(cutoff)}): {stat_line(cutoff)}")
+    if comp is not None:
+        msg += (f"\n\nFor comparison, the lowest-ranked {comp['position']} inside the top 10: "
+                f"{comp['player_name']} (team record {_record(comp)}): {stat_line(comp)}")
     return msg
 
 
@@ -114,23 +120,40 @@ def _ask_why(client, message: str) -> str:
     block = next((b for b in resp.content if hasattr(b, "text")), None)
     if block is None:
         raise ValueError("No text block in response")
-    return str(json.loads(re.sub(r"^```json|```$", "", block.text.strip()).strip())["why"]).strip()
+    return str(_parse_json(block.text)["why"]).strip()
 
 
-def generate_bubble_why(client, player: pd.Series, cutoff: pd.Series | None) -> str:
-    """≤ BUBBLE_WHY_MAX chars: one retry with the length called out, then hard-truncate."""
-    message = build_bubble_message(player, cutoff)
-    try:
-        why = _ask_why(client, message)
-        if len(why) > BUBBLE_WHY_MAX:
+def generate_bubble_why(client, player: pd.Series, comp: pd.Series | None, retries: int = 2) -> str:
+    """≤ BUBBLE_WHY_MAX chars. Errors retry like chips; an over-length answer gets one
+    rewrite request, then is hard-truncated (a failed rewrite keeps the first answer)."""
+    message = build_bubble_message(player, comp)
+    for attempt in range(retries + 1):
+        try:
+            why = _ask_why(client, message)
+            break
+        except Exception as e:
+            if attempt == retries:
+                print(f"  ! Bubble Why failed for {player.get('player_name', '?')}: {e}")
+                return ""
+            time.sleep(1.5)
+    if len(why) > BUBBLE_WHY_MAX:
+        try:
             why = _ask_why(client, f"{message}\n\nYour last answer was {len(why)} characters: "
                                    f'"{why}". Rewrite it in {BUBBLE_WHY_MAX} characters or fewer.')
-    except Exception as e:
-        print(f"  ! Bubble Why failed for {player.get('player_name', '?')}: {e}")
-        return ""
+        except Exception as e:
+            print(f"  ! Bubble Why rewrite failed for {player.get('player_name', '?')}: {e}")
     if len(why) > BUBBLE_WHY_MAX:
         why = why[:BUBBLE_WHY_MAX - 1].rstrip(" ,;·-") + "…"
     return why
+
+
+def comparison_player(board: pd.DataFrame, player: pd.Series) -> pd.Series | None:
+    """Lowest-ranked top-10 player at the same position (a QB is measured against a QB);
+    falls back to #TOP_N when no top-10 player shares the position."""
+    top = board[board["rank"] <= TOP_N].sort_values("rank")
+    same = top[top["position"] == player["position"]]
+    pick = same if not same.empty else top
+    return pick.iloc[-1] if not pick.empty else None
 
 
 def generate_chips(board: pd.DataFrame, outdir: Path, top_n: int = 3) -> pd.DataFrame:
@@ -151,12 +174,10 @@ def generate_chips(board: pd.DataFrame, outdir: Path, top_n: int = 3) -> pd.Data
         rows.append({"player_key": player["player_key"], "Chip": result["chip"],
                      "Why": result["why"], "rank": int(player["rank"])})
 
-    cutoff = board[board["rank"] == TOP_N]
-    cutoff = cutoff.iloc[0] if not cutoff.empty else None
     for _, player in board[board["rank"].between(*BUBBLE_RANKS)].iterrows():
         print(f"  Generating bubble Why: {player['player_name']}")
         rows.append({"player_key": player["player_key"], "Chip": "",
-                     "Why": generate_bubble_why(client, player, cutoff), "rank": int(player["rank"])})
+                     "Why": generate_bubble_why(client, player, comparison_player(board, player)), "rank": int(player["rank"])})
     chip_df = pd.DataFrame(rows)
 
     chip_dir = Path(outdir) / "chip_data"
