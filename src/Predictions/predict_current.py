@@ -16,8 +16,9 @@ Pipeline
 Outputs (predictions/{year}/)
   top10_mvp_latest.csv       ← Google Sheet import
   top10_mvp_{ts}.csv         ← archive (ARCHIVES_TO_KEEP most recent kept)
-  .prev_top10_mvp.csv        ← previous week's board; drives rank_delta / movement
-  chip_data/, graphics/      ← chips, rendered board PNG, caption (see src/publish/)
+  board_mvp_latest.csv       ← BOARD_DEPTH-deep board, same columns (+ archives)
+  .prev_board_mvp.csv        ← previous week's BOARD_DEPTH board; drives rank_delta / movement
+  chip_data/, graphics/      ← chips, rendered board + bubble PNGs, caption (see src/publish/)
 predictions/nfl_candidates.csv ← headshot candidates fetched by stinger-assets
 
 Run:
@@ -41,7 +42,7 @@ import nflreadpy as nfl
 
 from config import (
     CURRENT_YEAR, FEATURES, MODEL_TARGET, model_path, PREDICTIONS, CANDIDATES_CSV,
-    SEASON_GAMES, MIN_TEAM_GAME_SHARE, BOARD_POSITIONS, TOP_N, CANDIDATE_POOL,
+    SEASON_GAMES, MIN_TEAM_GAME_SHARE, BOARD_POSITIONS, TOP_N, BOARD_DEPTH, CANDIDATE_POOL,
     ARCHIVES_TO_KEEP,
 )
 from src.features import add_derived_features, feature_matrix
@@ -54,7 +55,8 @@ COUNTING_COLS = [
     "receiving_yards", "receiving_tds", "receiving_epa",
 ]
 
-# Columns written to top10_mvp_latest.csv, in order (the Sheet import contract)
+# Columns written to top10_mvp_latest.csv, in order (the Sheet import contract).
+# board_mvp_latest.csv uses the same columns.
 BOARD_COLS = [
     "player_key", "rank", "rank_delta", "movement", "player_name", "team", "position",
     "model_score",
@@ -182,12 +184,15 @@ def build_board(season: int, through_week: int | None = None) -> tuple[pd.DataFr
     return board, week
 
 
-def add_movement(top: pd.DataFrame, prev_path: Path) -> pd.DataFrame:
-    """rank_delta: +up / -down vs last week ("" if NEW); movement: ↑3 / ↓2 / – / NEW."""
+def add_movement(top: pd.DataFrame, prev_path: Path, legacy_prev: Path | None = None) -> pd.DataFrame:
+    """rank_delta: +up / -down vs last week ("" if NEW); movement: ↑3 / ↓2 / – / NEW.
+    Falls back to legacy_prev (the old 10-row snapshot) until the first new one is rolled;
+    players outside that old top 10 show NEW for that one week."""
     top = top.copy()
     prev = {}
-    if prev_path.exists():
-        p = pd.read_csv(prev_path)
+    src = prev_path if prev_path.exists() else legacy_prev
+    if src is not None and src.exists():
+        p = pd.read_csv(src)
         prev = dict(zip(p["player_id"].astype(str), p["rank"].astype(int)))
     deltas, moves = [], []
     for pid, rank in zip(top["player_id"].astype(str), top["rank"]):
@@ -202,14 +207,17 @@ def add_movement(top: pd.DataFrame, prev_path: Path) -> pd.DataFrame:
     return top
 
 
-def roll_prev_snapshot(latest_path: Path, prev_path: Path, week: int) -> None:
+def roll_prev_snapshot(latest_path: Path, prev_path: Path, week: int) -> bool:
     """The movement baseline is the last board from an EARLIER week, so a
-    same-week rerun (manual dispatch, a fix) doesn't reset movement to '–'."""
+    same-week rerun (manual dispatch, a fix) doesn't reset movement to '–'.
+    Returns True if the snapshot was rolled."""
     if not latest_path.exists():
-        return
+        return False
     latest = pd.read_csv(latest_path)
     if "through_week" in latest.columns and len(latest) and int(latest["through_week"].iloc[0]) < week:
         latest[["player_id", "player_key", "rank", "through_week"]].to_csv(prev_path, index=False)
+        return True
+    return False
 
 
 def write_candidates(board: pd.DataFrame, path: Path) -> None:
@@ -239,42 +247,56 @@ def run(season: int = CURRENT_YEAR, through_week: int | None = None,
         raise SystemExit(f"ERROR: empty MVP board for {season} through week {week} — "
                          f"no eligible {'/'.join(BOARD_POSITIONS)} found.")
 
-    top = board.head(TOP_N).copy()
-    top["model_score"] = top["model_score"].round(6)
-    top["updated_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
+    deep = board.head(BOARD_DEPTH).copy()
+    deep["model_score"] = deep["model_score"].round(6)
+    deep["updated_utc"] = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M")
 
     latest = outdir / "top10_mvp_latest.csv"
-    prev = outdir / ".prev_top10_mvp.csv"
-    roll_prev_snapshot(latest, prev, week)
-    top = add_movement(top, prev)[BOARD_COLS]
+    board_latest = outdir / "board_mvp_latest.csv"
+    prev = outdir / ".prev_board_mvp.csv"
+    legacy_prev = outdir / ".prev_top10_mvp.csv"
+    # Before the first 30-deep board exists, roll from the old top-10 file.
+    if roll_prev_snapshot(board_latest if board_latest.exists() else latest, prev, week):
+        legacy_prev.unlink(missing_ok=True)
+    deep = add_movement(deep, prev, legacy_prev)[BOARD_COLS]
+    top = deep.head(TOP_N)
 
     ts = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
-    top.to_csv(latest, index=False)
-    top.to_csv(outdir / f"top10_mvp_{ts}.csv", index=False)
-    for old in sorted(outdir.glob("top10_mvp_2*.csv"))[:-ARCHIVES_TO_KEEP]:
-        old.unlink()
+    for df, stem, path in ((top, "top10_mvp", latest), (deep, "board_mvp", board_latest)):
+        df.to_csv(path, index=False)
+        df.to_csv(outdir / f"{stem}_{ts}.csv", index=False)
+        for old in sorted(outdir.glob(f"{stem}_2*.csv"))[:-ARCHIVES_TO_KEEP]:
+            old.unlink()
 
     print(f"\n=== {season} NFL MVP — through Week {week} ===")
     show = ["rank", "movement", "player_name", "team", "position",
             "games", "team_games", "win_pct", "passer_rating", "total_tds", "total_yards"]
     print(top[show].to_string(index=False))
     print(f"\nSaved -> {latest}")
+    print(f"Saved -> {board_latest} ({len(deep)} deep)")
 
     if publish:
         write_candidates(board, candidates)
-        publish_outputs(top, outdir, season, week)
+        publish_outputs(deep, outdir, season, week)
     return latest
 
 
-def publish_outputs(top: pd.DataFrame, outdir: Path, season: int, week: int) -> None:
-    """Chips (needs ANTHROPIC_API_KEY) → board graphic → captions (needs key)."""
+def publish_outputs(deep: pd.DataFrame, outdir: Path, season: int, week: int) -> None:
+    """Chips + bubble Whys (needs ANTHROPIC_API_KEY) → board and bubble graphics →
+    carousel caption (needs key). `deep` is the BOARD_DEPTH board."""
     from src.publish.generate_chips import generate_chips
-    from src.publish.render_graphics import render_board
+    from src.publish.render_graphics import render_board, render_bubble_graphic
     from src.publish.generate_captions import generate_caption_file
 
-    chip_df = generate_chips(top, outdir)
-    render_board(top, chip_df, outdir / "graphics", season, week)
-    generate_caption_file(top, chip_df, outdir / "graphics", season, week)
+    gfx = outdir / "graphics"
+    chip_df = generate_chips(deep, outdir)
+    render_board(deep.head(TOP_N), chip_df, gfx, season, week)
+    # The bubble slide is secondary: a failure there must not cost the main board's caption.
+    try:
+        render_bubble_graphic(deep, chip_df, gfx, season, week)
+    except Exception as e:
+        print(f"  [WARN] Bubble graphic failed: {e}")
+    generate_caption_file(deep, chip_df, gfx, season, week)
 
 
 def main() -> None:
