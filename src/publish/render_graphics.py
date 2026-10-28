@@ -169,6 +169,23 @@ def fit_text(draw, text, font, max_w) -> str:
     return text
 
 
+def wrap_text(draw, text, font, max_w, max_lines: int) -> List[str]:
+    """Greedy word-wrap by pixel width; the last allowed line is ellipsized if it overflows."""
+    lines: List[str] = []
+    cur = ""
+    for word in text.split():
+        if cur and text_w(draw, f"{cur} {word}", font) > max_w:
+            lines.append(cur)
+            cur = word
+        else:
+            cur = f"{cur} {word}".strip()
+    lines.append(cur)
+    if len(lines) > max_lines:
+        lines = lines[:max_lines - 1] + [" ".join(lines[max_lines - 1:])]
+    lines[-1] = fit_text(draw, lines[-1], font, max_w)
+    return lines
+
+
 def draw_rank_badge(canvas: Image.Image, cx: int, cy: int, r: int, rank: int, size: int,
                     outline_w: int = 2):
     bl = Image.new("RGBA", canvas.size, (0, 0, 0, 0))
@@ -470,14 +487,18 @@ def _bubble_headshot(player_key: str, d: int) -> Image.Image:
 
 
 def draw_bubble_label(canvas: Image.Image, slot: dict, player: pd.Series, why: Optional[str]):
-    """Name / TEAM · POS + movement / gold Why, centred in the slot's label_box."""
+    """Name / TEAM · POS + movement / gold Why (up to 2 wrapped lines), centred in the
+    slot's label_box. The plate is sized for two Why lines; fewer lines shift the block down."""
     draw = ImageDraw.Draw(canvas)
     lb = slot["label_box"]
     cx, max_w = (lb[0] + lb[2]) // 2, lb[2] - lb[0] - 16
+    wf, why_lh = _font("fg_med_cond", 20), 21
+    why_lines = wrap_text(draw, why.strip(), wf, max_w, max_lines=2) if isinstance(why, str) and why.strip() else []
+    top = lb[1] + (2 - len(why_lines)) * why_lh // 2
 
     nf = _font("agency_bold", 30 if slot["d"] > 240 else 26)
     name = fit_text(draw, str(player.get("player_name", "")).upper(), nf, max_w)
-    draw.text((cx - text_w(draw, name, nf) // 2, lb[1] + 6), name, font=nf, fill=WHITE,
+    draw.text((cx - text_w(draw, name, nf) // 2, top + 6), name, font=nf, fill=WHITE,
               stroke_width=1, stroke_fill=BLACK)
 
     mf = _font("fg_demi_cond", 22)
@@ -485,13 +506,11 @@ def draw_bubble_label(canvas: Image.Image, slot: dict, player: pd.Series, why: O
     probe = Image.new("RGBA", (10, 10))
     move_w = draw_movement(ImageDraw.Draw(probe), 0, 0, player.get("movement", ""), 22)
     x = cx - (text_w(draw, meta, mf) + move_w) // 2
-    draw.text((x, lb[1] + 44), meta, font=mf, fill=GREY)
-    draw_movement(draw, x + text_w(draw, meta, mf), lb[1] + 44, player.get("movement", ""), 22)
+    draw.text((x, top + 44), meta, font=mf, fill=GREY)
+    draw_movement(draw, x + text_w(draw, meta, mf), top + 44, player.get("movement", ""), 22)
 
-    if isinstance(why, str) and why.strip():
-        wf = _font("fg_med_cond", 20)
-        wt = fit_text(draw, why.strip(), wf, max_w)
-        draw.text((cx - text_w(draw, wt, wf) // 2, lb[1] + 68), wt, font=wf, fill=GOLD)
+    for i, wt in enumerate(why_lines):
+        draw.text((cx - text_w(draw, wt, wf) // 2, top + 66 + i * why_lh), wt, font=wf, fill=GOLD)
 
 
 def render_bubble_graphic(board: pd.DataFrame, chip_df: pd.DataFrame, gfx_dir: Path,
