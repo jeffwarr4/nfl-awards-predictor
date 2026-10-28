@@ -70,6 +70,12 @@ def build_user_message(player: pd.Series) -> str:
             f"Stats: {stat_line(player)}")
 
 
+def _parse_json(text: str) -> dict:
+    """First JSON object in the reply; ignores code fences and any trailing commentary."""
+    text = re.sub(r"^```json|```$", "", text.strip()).strip()
+    return json.JSONDecoder().raw_decode(text[text.index("{"):])[0]
+
+
 def generate_chip_for_player(client, player: pd.Series, retries: int = 2) -> dict:
     message = build_user_message(player)
     for attempt in range(retries + 1):
@@ -83,7 +89,7 @@ def generate_chip_for_player(client, player: pd.Series, retries: int = 2) -> dic
             block = next((b for b in resp.content if hasattr(b, "text")), None)
             if block is None:
                 raise ValueError("No text block in response")
-            data = json.loads(re.sub(r"^```json|```$", "", block.text.strip()).strip())
+            data = _parse_json(block.text)
             return {"chip": data["chip"], "why": data["why"]}
         except Exception as e:
             if attempt == retries:
@@ -114,20 +120,28 @@ def _ask_why(client, message: str) -> str:
     block = next((b for b in resp.content if hasattr(b, "text")), None)
     if block is None:
         raise ValueError("No text block in response")
-    return str(json.loads(re.sub(r"^```json|```$", "", block.text.strip()).strip())["why"]).strip()
+    return str(_parse_json(block.text)["why"]).strip()
 
 
-def generate_bubble_why(client, player: pd.Series, cutoff: pd.Series | None) -> str:
-    """≤ BUBBLE_WHY_MAX chars: one retry with the length called out, then hard-truncate."""
+def generate_bubble_why(client, player: pd.Series, cutoff: pd.Series | None, retries: int = 2) -> str:
+    """≤ BUBBLE_WHY_MAX chars. Errors retry like chips; an over-length answer gets one
+    rewrite request, then is hard-truncated (a failed rewrite keeps the first answer)."""
     message = build_bubble_message(player, cutoff)
-    try:
-        why = _ask_why(client, message)
-        if len(why) > BUBBLE_WHY_MAX:
+    for attempt in range(retries + 1):
+        try:
+            why = _ask_why(client, message)
+            break
+        except Exception as e:
+            if attempt == retries:
+                print(f"  ! Bubble Why failed for {player.get('player_name', '?')}: {e}")
+                return ""
+            time.sleep(1.5)
+    if len(why) > BUBBLE_WHY_MAX:
+        try:
             why = _ask_why(client, f"{message}\n\nYour last answer was {len(why)} characters: "
                                    f'"{why}". Rewrite it in {BUBBLE_WHY_MAX} characters or fewer.')
-    except Exception as e:
-        print(f"  ! Bubble Why failed for {player.get('player_name', '?')}: {e}")
-        return ""
+        except Exception as e:
+            print(f"  ! Bubble Why rewrite failed for {player.get('player_name', '?')}: {e}")
     if len(why) > BUBBLE_WHY_MAX:
         why = why[:BUBBLE_WHY_MAX - 1].rstrip(" ,;·-") + "…"
     return why
