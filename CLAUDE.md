@@ -70,8 +70,9 @@ winner #1 / top-3 / top-5 / mean rank — AUC is deliberately not reported (~1 p
 `BOARD_COLS` in `predict_current.py` (a contract — don't rename casually). `board_mvp_latest.csv` is the same
 columns `BOARD_DEPTH` (30) deep — a 2010–2025 replay showed every eventual winner top-15 by Week 8 and top-30
 covering 98–100% of top-5 vote finishers from Week 4. Each has 4 rolling timestamped archives. After chips run,
-`board_mvp_latest.csv` gets a trailing `why_blurb` column (the top-3 and bubble Whys); the stingercollectibles.com
-NFL page reads that file straight from GitHub for its On the Bubble rows. Plus
+`board_mvp_latest.csv` gets trailing `chips` (top 3, pipe-separated) and `why_blurb` (top-3 and bubble Whys) columns;
+the stingercollectibles.com NFL page and home Trending read that file straight from GitHub (no Google Sheet).
+`top10_mvp_latest.csv` keeps `BOARD_COLS` only: the Sheet still imports it for the old Squarespace page until cutover. Plus
 `chip_data/`, `graphics/mvp_board_{year}_wk{NN}.png` + `mvp_board_latest.png`,
 `graphics/bubble_board_{year}_wk{NN}.png` + `bubble_board_latest.png`, `graphics/caption_mvp.txt` (covers
 the two-slide carousel). `.prev_board_mvp.csv` (30 rows) is the movement baseline: it is rolled forward only

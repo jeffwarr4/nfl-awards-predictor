@@ -16,7 +16,7 @@ Pipeline
 Outputs (predictions/{year}/)
   top10_mvp_latest.csv       ← Google Sheet import
   top10_mvp_{ts}.csv         ← archive (ARCHIVES_TO_KEEP most recent kept)
-  board_mvp_latest.csv       ← BOARD_DEPTH-deep board, same columns (+ archives); + why_blurb after chips
+  board_mvp_latest.csv       ← BOARD_DEPTH-deep board, same columns (+ archives); + chips, why_blurb after chips run
   .prev_board_mvp.csv        ← previous week's BOARD_DEPTH board; drives rank_delta / movement
   chip_data/, graphics/      ← chips, rendered board + bubble PNGs, caption (see src/publish/)
 predictions/nfl_candidates.csv ← headshot candidates fetched by stinger-assets
@@ -290,9 +290,11 @@ def publish_outputs(deep: pd.DataFrame, outdir: Path, season: int, week: int) ->
 
     gfx = outdir / "graphics"
     chip_df = generate_chips(deep, outdir)
-    # The website's On the Bubble rows read the board straight from GitHub, so it carries the Whys too
+    # The website's NFL page reads the board straight from GitHub, so it carries the chips and Whys too
     whys = dict(zip(chip_df["player_key"], chip_df["Why"]))
-    deep.assign(why_blurb=deep["player_key"].map(whys).fillna("")).to_csv(
+    chips = dict(zip(chip_df["player_key"], chip_df["Chip"].fillna("")))
+    deep.assign(chips=deep["player_key"].map(chips).fillna(""),
+                why_blurb=deep["player_key"].map(whys).fillna("")).to_csv(
         outdir / "board_mvp_latest.csv", index=False)
     render_board(deep.head(TOP_N), chip_df, gfx, season, week)
     # The bubble slide is secondary: a failure there must not cost the main board's caption.
