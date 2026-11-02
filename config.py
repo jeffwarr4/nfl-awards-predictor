@@ -75,7 +75,7 @@ def metrics_path(target: str = MODEL_TARGET) -> Path:
 # ── In-season scoring ─────────────────────────────────────────────
 SEASON_GAMES        = 17      # counting stats are projected to this pace
 MIN_TEAM_GAME_SHARE = 0.60    # must have played ≥60% of his team's games
-BOARD_POSITIONS     = ("QB", "RB")
+BOARD_POSITIONS     = ("QB", "RB", "WR")   # WR added 2026: backtest winner ranks unchanged
 TOP_N               = 10
 # Saved board depth. 2010–2025 replay: every eventual winner was top-15 by Week 8,
 # every top-5 vote finisher top-26 from Week 8 on; top 30 covers 98–100% from Week 4.

@@ -51,14 +51,15 @@ columns with 0 — a feature added to the list but not computed silently becomes
 `1 + 20*share`, `StandardScaler + LogisticRegression(C=0.5, class_weight="balanced")`. `"winner"` is last year's
 winner-only model, kept trainable for comparison. Models and metrics are committed in `models/`
 (`nfl_mvp_{target}.joblib`, `metrics_{target}.json` with per-season winner rank, `coefficients_{target}.csv`);
-the weekly workflow does **not** retrain. Evaluation is leave-one-season-out on a QB/RB board, reported as
+the weekly workflow does **not** retrain. Evaluation is leave-one-season-out on a QB/RB/WR board (`BOARD_POSITIONS`), reported as
 winner #1 / top-3 / top-5 / mean rank — AUC is deliberately not reported (~1 positive per season).
 
 **Live scoring (`predict_current.py`)** — order matters:
 1. Weekly REG stats → season-to-date per player; team = most recent team; `passing_cpoe` is an
    attempt-weighted mean across weeks, not a sum.
-2. Eligibility: QB/RB with games ≥ 60% of *his team's* played games (survives byes; the old `games >= 8`
-   gate emptied the board through Week 7).
+2. Eligibility: QB/RB/WR with games ≥ 60% of *his team's* played games (survives byes; the old `games >= 8`
+   gate emptied the board through Week 7). WRs were added in 2026: receiving yards carry the largest positive
+   coefficient, and adding them to the 2000–2025 backtest changed no winner's rank (record-pace WRs land ~8–15).
 3. Counting stats **and games** projected to a 17-game pace (`× 17 / team_games`) before scoring; rates
    aren't scaled. Without this the vote-trained model collapses early in the season.
 4. Displayed stats are actual season-to-date values, not the projection. QB-only stats are blank for RBs.
@@ -88,7 +89,7 @@ in code; wrapped to two lines on the slide) but no chips, in the same `chip_data
 **stinger-assets contract.** `player_key = firstname_lastname_team` (nflreadpy team code, lowercased) and must
 equal `safe_filename(f"{name} {team}")` in `stinger-assets/sync_espn_headshots.py` (apostrophes/periods dropped,
 hyphens split). `predictions/nfl_candidates.csv` (top 30 eligible — everyone on the saved board — so headshots
-exist before a player climbs) is pulled by stinger-assets' Monday sync. Logos are ESPN-named and lowercase; nflreadpy `LA`/`WAS`
+exist before a player climbs) is pulled by stinger-assets' daily sync (11:37 UTC, before the Tuesday run). Logos are ESPN-named and lowercase; nflreadpy `LA`/`WAS`
 map to ESPN `lar`/`wsh` (`src/publish/stats.py: ESPN_TEAM_CODES`). The runner is case-sensitive; Windows isn't.
 
 **Training-data gotchas.** nflverse labels 2000–2002 player rows with current franchise codes (`LV`/`LA`/`LAC`)

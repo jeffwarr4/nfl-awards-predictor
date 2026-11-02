@@ -5,7 +5,7 @@ Pipeline
 1. Weekly regular-season stats (nflreadpy) → season-to-date totals per player.
    passing_cpoe is an attempt-weighted mean across weeks, not a sum.
 2. Team record from played regular-season games only.
-3. Eligibility: QB/RB who played ≥ MIN_TEAM_GAME_SHARE of his team's games
+3. Eligibility: QB/RB/WR who played ≥ MIN_TEAM_GAME_SHARE of his team's games
    (works from Week 1 and survives byes, unlike a fixed games floor).
 4. Counting stats (incl. games) projected to a SEASON_GAMES pace before scoring —
    the model was trained on full seasons; raw partial totals collapse it.
@@ -146,7 +146,7 @@ def passer_rating(df: pd.DataFrame) -> pd.Series:
 # Board
 # ------------------------
 def build_board(season: int, through_week: int | None = None) -> tuple[pd.DataFrame, int]:
-    """All eligible QB/RB, scored and ranked. Returns (board, through_week)."""
+    """All eligible QB/RB/WR, scored and ranked. Returns (board, through_week)."""
     weekly = load_weekly(season, through_week)
     if weekly.empty:
         return pd.DataFrame(), 0

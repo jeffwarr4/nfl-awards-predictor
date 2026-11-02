@@ -9,7 +9,7 @@ Targets (config.TARGETS; config.MODEL_TARGET picks the one predict uses)
 
 Evaluation
 - Leave-one-season-out over TRAIN_START..TRAIN_END
-- Each held-out season is ranked on a QB/RB board; we record where the actual
+- Each held-out season is ranked on a BOARD_POSITIONS board; we record where the actual
   winner landed (best-ranked winner in co-MVP years) and report winner #1 /
   top-3 / top-5 rates and mean rank. AUC is not reported — with ~1 positive per
   season it says nothing about whether the winner is at the top of the board.
@@ -139,7 +139,7 @@ def main() -> None:
 
     results = {t: run(t) for t in targets}
 
-    print(f"Leave-one-season-out, {TRAIN_START}-{TRAIN_END}, QB/RB board "
+    print(f"Leave-one-season-out, {TRAIN_START}-{TRAIN_END}, {'/'.join(BOARD_POSITIONS)} board "
           f"(live model: {MODEL_TARGET})")
     print(f"{'target':<12} {'#1':>6} {'top3':>6} {'top5':>6} {'mean rank':>10}")
     for t, m in results.items():
