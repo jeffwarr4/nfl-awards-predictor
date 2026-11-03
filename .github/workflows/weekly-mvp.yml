@@ -26,7 +26,9 @@ run-name: ${{ (github.event_name == 'schedule' || inputs.scheduled == 'true') &&
 
 on:
   schedule:
-    - cron: "17 15 * 9-12,1-2 2"  # Tuesdays 15:17 UTC, Sep–Feb (off :00, when GitHub delays/drops schedules)
+    # Started on time by the stinger-scheduler Cloudflare Worker (stinger-website/scheduler) at 15:17 UTC;
+    # this cron is the late backup, and the guard job makes it a no-op once the Worker's run succeeded.
+    - cron: "17 17 * 9-12,1-2 2"  # Tuesdays 17:17 UTC, Sep–Feb
   workflow_dispatch:
     inputs:
       scheduled:

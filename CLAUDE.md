@@ -101,7 +101,7 @@ while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` brid
 
 ## Automation
 
-`.github/workflows/weekly-mvp.yml`: Tuesdays 15:17 UTC (kept off :00, when GitHub delays scheduled runs), Sep–Feb, plus manual dispatch. Checks out
+`.github/workflows/weekly-mvp.yml`: started Tuesdays 15:17 UTC, Sep–Feb, by the stinger-scheduler Cloudflare Worker (`stinger-website/scheduler`); its own cron (Tuesdays 17:17 UTC) is a late backup. Plus manual dispatch. Checks out
 stinger-assets as a sibling (`STINGER_ASSETS_DIR`), runs `predict_current`, fails if the board is empty (the
 script also exits non-zero before overwriting the last good board), uploads CSV/PNG/TXT artifacts, and commits
 `predictions/` (plus `git add -f` of `.prev_board_mvp.csv`) with `[skip ci]`. Needs the `ANTHROPIC_API_KEY` secret for chips/captions.
