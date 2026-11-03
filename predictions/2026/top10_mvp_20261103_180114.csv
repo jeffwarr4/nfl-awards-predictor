@@ -1,0 +1,11 @@
+player_key,rank,rank_delta,movement,player_name,team,position,model_score,games,team_games,win_pct,passer_rating,total_tds,td_int,total_yards,pass_ypg,rush_yards,season,through_week,updated_utc,player_id
+josh_allen_buf,1,0,–,Josh Allen,BUF,QB,0.999968,7,7,0.857,101.1,20,2.2,2064,256.1,270,2026,8,2026-11-03 18:01,00-0034857
+brock_purdy_sf,2,1,↑1,Brock Purdy,SF,QB,0.999888,7,7,0.857,110.1,16,3.75,1909,249.7,161,2026,8,2026-11-03 18:01,00-0037834
+joe_burrow_cin,3,3,↑3,Joe Burrow,CIN,QB,0.999673,7,7,0.714,111.6,22,3.33,2185,302.1,70,2026,8,2026-11-03 18:01,00-0036442
+jared_goff_det,4,-2,↓2,Jared Goff,DET,QB,0.999543,7,7,0.714,110.0,16,15.0,1979,280.6,15,2026,8,2026-11-03 18:01,00-0033106
+jahmyr_gibbs_det,5,0,–,Jahmyr Gibbs,DET,RB,0.999469,7,7,0.714,,10,,1058,,773,2026,8,2026-11-03 18:01,00-0039139
+trevor_lawrence_jax,6,1,↑1,Trevor Lawrence,JAX,QB,0.997392,7,7,0.714,112.6,17,4.25,1770,241.4,80,2026,8,2026-11-03 18:01,00-0036971
+drake_maye_ne,7,1,↑1,Drake Maye,NE,QB,0.992616,8,8,0.625,100.4,18,1.88,2199,247.9,216,2026,8,2026-11-03 18:01,00-0039851
+kenneth_walker_iii_kc,8,-4,↓4,Kenneth Walker III,KC,RB,0.990161,7,7,0.714,,8,,901,,770,2026,8,2026-11-03 18:01,00-0038134
+james_cook_buf,9,1,↑1,James Cook,BUF,RB,0.978721,7,7,0.857,,7,,817,,707,2026,8,2026-11-03 18:01,00-0037248
+patrick_mahomes_kc,10,-1,↓1,Patrick Mahomes,KC,QB,0.977058,7,7,0.714,99.7,13,3.0,1872,256.4,77,2026,8,2026-11-03 18:01,00-0033873
