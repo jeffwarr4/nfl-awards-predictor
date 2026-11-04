@@ -43,9 +43,10 @@ TEAM_HASHTAGS = {
 SYSTEM_PROMPT = """You are a sports social media manager for STINGER, an NFL awards prediction tracker.
 
 Write the weekly update post for our NFL MVP carousel: slide 1 is the top-10 board, slide 2 is "On the Bubble" (ranks 11-15, the players knocking on the door). Produce:
-1. A punchy caption body — 3 sentences max, under 320 characters total. The first 1-2 sentences cover the top of the board (slide 1). The last sentence names the top bubble player and why they're close to the top 10 (slide 2). Data-driven and slightly hype. Reference actual stats from the input. You may use the history note for context, but don't force it. No filler ("Let's dive in!", "Check this out!"). 1-2 emoji max. Do NOT include hashtags in the body.
-2. 15 hashtags for Instagram. Choose ONLY from the approved base tags below plus the player-name and team tags given in the user message. Do NOT invent tags that aren't in the approved list or given in the message.
-3. 5 hashtags for Facebook — the 5 most relevant from your Instagram list (favour generic NFL + award tags over player/team specifics).
+1. A punchy caption body — 3 sentences max, under 320 characters total. The first 1-2 sentences cover the top of the board (slide 1). The last sentence names the top bubble player and why they're close to the top 10 (slide 2). Data-driven and slightly hype. Reference actual stats from the input. You may use the history note for context, but don't force it. No filler ("Let's dive in!", "Check this out!"). 1-2 emoji max. Do NOT include hashtags in the body. Write ranks as "No. 11", never "#11" (Instagram reads "#11" as a hashtag).
+   Describe team records only with the numbers given: never call a record perfect or undefeated unless it has no losses, and don't claim standings (division or conference leads, playoff spots) the input doesn't state.
+2. 5 hashtags for Instagram, most important first (Instagram now limits posts to 5). Choose ONLY from the approved base tags below plus the player-name and team tags given in the user message. Do NOT invent tags that aren't in the approved list or given in the message.
+3. 5 hashtags for Facebook, most important first (favour generic NFL + award tags over player/team specifics).
 
 Approved base hashtags (pick the most relevant, always include #StingerNFL):
 #NFL #NFLTwitter #FootballTwitter #NFLFootball #NFL{year} #NFLSeason
@@ -57,8 +58,19 @@ Output ONLY valid JSON in exactly this shape, no markdown fences, no preamble:
 
 
 # Context for the bubble sentence (from the 2010–2025 week-by-week replay).
-BUBBLE_HISTORY = ("2012 Adrian Peterson was #15 at Week 8 and won MVP; "
-                  "2025 Trevor Lawrence was #25 at Week 8 and finished 5th.")
+BUBBLE_HISTORY = ("2012 Adrian Peterson was No. 15 at Week 8 and won MVP; "
+                  "2025 Trevor Lawrence was No. 25 at Week 8 and finished 5th.")
+
+
+def team_record(p: pd.Series) -> str:
+    """', team 6-1' from win_pct x team_games (ties count as half a win, so this is close but not exact
+    in a season with a tie), so the caption sees a record rather than a bare .857."""
+    try:
+        g, w = int(p["team_games"]), float(p["win_pct"]) * int(p["team_games"])
+    except (KeyError, TypeError, ValueError):
+        return ""
+    wins = int(w + 0.5)
+    return f", team {wins}-{g - wins}"
 
 
 def _build_prompt(board: pd.DataFrame, chip_df: pd.DataFrame, week: int) -> str:
@@ -66,7 +78,8 @@ def _build_prompt(board: pd.DataFrame, chip_df: pd.DataFrame, week: int) -> str:
     board = board.sort_values("rank")
 
     def line(p: pd.Series) -> str:
-        out = f"#{int(p['rank'])} {p['player_name']} ({p['team']} {p['position']}): {stat_line(p)}"
+        out = (f"No. {int(p['rank'])} {p['player_name']} ({p['team']} {p['position']}{team_record(p)}): "
+               f"{stat_line(p)}")
         if isinstance(whys.get(p["player_key"]), str) and whys[p["player_key"]]:
             out += f"  | {whys[p['player_key']]}"
         return out
