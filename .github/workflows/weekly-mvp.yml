@@ -121,6 +121,23 @@ jobs:
             exit 1
           fi
 
+      # A player new to the slides (ranks 1-15) has no headshot until stinger-assets' daily sync, which only
+      # sees him after this run commits. Fetch any missing ones now (this sport's ESPN rosters only, ~25 s;
+      # nothing is committed to stinger-assets, its daily sync does that). If one still can't be found, fail
+      # here, before the commit, so a slide with a blank circle never reaches the site or the social draft.
+      - name: Fetch missing headshots
+        id: headshots
+        run: |
+          YEAR=$(python -c "import config; print(config.CURRENT_YEAR)")
+          python stinger-assets/sync_espn_headshots.py fetch --sport nfl --board "predictions/${YEAR}/board_mvp_latest.csv" --strict
+
+      - name: Re-render the slides with the new headshots
+        if: steps.headshots.outputs.downloaded != '0'
+        run: python -m src.publish.render_graphics
+        env:
+          PYTHONIOENCODING: utf-8
+          STINGER_ASSETS_DIR: ${{ github.workspace }}/stinger-assets
+
       - name: Upload prediction artifacts
         uses: actions/upload-artifact@v4
         with:

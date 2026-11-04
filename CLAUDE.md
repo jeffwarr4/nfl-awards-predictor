@@ -106,4 +106,10 @@ stinger-assets as a sibling (`STINGER_ASSETS_DIR`), runs `predict_current`, fail
 script also exits non-zero before overwriting the last good board), uploads CSV/PNG/TXT artifacts, and commits
 `predictions/` (plus `git add -f` of `.prev_board_mvp.csv`) with `[skip ci]`. Needs the `ANTHROPIC_API_KEY` secret for chips/captions.
 
-A `guard` job runs first: a scheduled start (the cron, or a dispatch with `scheduled=true`, which is how the planned Cloudflare Worker will start it) is skipped when a scheduled run already succeeded in the last 20 hours, so a late cron after an on-time run is a no-op. Manual runs from the Actions tab (`scheduled` left false) always run. Run names end in `(scheduled)` or `(manual)`; the guard relies on that suffix.
+A `guard` job runs first: a scheduled start (the cron, or a dispatch with `scheduled=true`, which is how the stinger-scheduler Cloudflare Worker starts it) is skipped when a scheduled run already succeeded in the last 20 hours, so a late cron after an on-time run is a no-op. Manual runs from the Actions tab (`scheduled` left false) always run. Run names end in `(scheduled)` or `(manual)`; the guard relies on that suffix.
+
+After the board is written, `stinger-assets/sync_espn_headshots.py fetch --strict` downloads any missing headshot for
+ranks 1–15 (a player new to the slides isn't in stinger-assets until its daily sync reads the committed candidates
+file, i.e. after this run), and the slides are re-rendered if it downloaded any. If one still can't be found the run
+fails before committing, so a slide with a blank circle never reaches the site or the social draft: add the PNG to
+stinger-assets by hand (or fix the team alias there) and rerun.
