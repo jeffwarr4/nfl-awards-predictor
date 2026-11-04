@@ -78,20 +78,20 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Sibling checkout so STINGER_ASSETS_DIR matches the ../stinger-assets/
       # convention used locally. Asset filenames are lowercase — the runner's
       # filesystem is case-sensitive even though Windows isn't.
       - name: Checkout stinger-assets
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: jeffwarr4/stinger-assets
           path: stinger-assets
           # token: ${{ secrets.STINGER_ASSETS_PAT }}
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v7
         with:
           python-version: "3.12"
           cache: pip
@@ -139,7 +139,7 @@ jobs:
           STINGER_ASSETS_DIR: ${{ github.workspace }}/stinger-assets
 
       - name: Upload prediction artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: nfl-mvp-${{ github.run_number }}
           path: |
