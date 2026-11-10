@@ -2,30 +2,30 @@ sport,player_name,team,player_key
 NFL,Josh Allen,BUF,josh_allen_buf
 NFL,Brock Purdy,SF,brock_purdy_sf
 NFL,Joe Burrow,CIN,joe_burrow_cin
-NFL,Jared Goff,DET,jared_goff_det
 NFL,Jahmyr Gibbs,DET,jahmyr_gibbs_det
+NFL,Jared Goff,DET,jared_goff_det
 NFL,Trevor Lawrence,JAX,trevor_lawrence_jax
-NFL,Drake Maye,NE,drake_maye_ne
 NFL,Kenneth Walker III,KC,kenneth_walker_iii_kc
-NFL,James Cook,BUF,james_cook_buf
 NFL,Patrick Mahomes,KC,patrick_mahomes_kc
-NFL,Jaxon Smith-Njigba,SEA,jaxon_smith_njigba_sea
-NFL,Jaylen Warren,PIT,jaylen_warren_pit
 NFL,Jordan Love,GB,jordan_love_gb
-NFL,Caleb Williams,CHI,caleb_williams_chi
-NFL,Kirk Cousins,LV,kirk_cousins_lv
+NFL,James Cook,BUF,james_cook_buf
+NFL,Drake Maye,NE,drake_maye_ne
+NFL,Jaylen Warren,PIT,jaylen_warren_pit
+NFL,Jaxon Smith-Njigba,SEA,jaxon_smith_njigba_sea
 NFL,Bo Nix,DEN,bo_nix_den
 NFL,Dak Prescott,DAL,dak_prescott_dal
-NFL,Deshaun Watson,CLE,deshaun_watson_cle
-NFL,Tee Higgins,CIN,tee_higgins_cin
+NFL,Caleb Williams,CHI,caleb_williams_chi
 NFL,Christian McCaffrey,SF,christian_mccaffrey_sf
-NFL,Kyler Murray,MIN,kyler_murray_min
-NFL,Bijan Robinson,ATL,bijan_robinson_atl
-NFL,Bhayshul Tuten,JAX,bhayshul_tuten_jax
-NFL,Matthew Stafford,LA,matthew_stafford_la
-NFL,D'Andre Swift,CHI,dandre_swift_chi
-NFL,Amon-Ra St. Brown,DET,amon_ra_st_brown_det
+NFL,Kirk Cousins,LV,kirk_cousins_lv
 NFL,Christian Watson,GB,christian_watson_gb
-NFL,Aaron Jones,MIN,aaron_jones_min
-NFL,Bryce Young,CAR,bryce_young_car
-NFL,Aaron Rodgers,PIT,aaron_rodgers_pit
+NFL,Tee Higgins,CIN,tee_higgins_cin
+NFL,Matthew Stafford,LA,matthew_stafford_la
+NFL,Bijan Robinson,ATL,bijan_robinson_atl
+NFL,C.J. Stroud,HOU,cj_stroud_hou
+NFL,Amon-Ra St. Brown,DET,amon_ra_st_brown_det
+NFL,Ja'Marr Chase,CIN,jamarr_chase_cin
+NFL,Matthew Golden,GB,matthew_golden_gb
+NFL,Bhayshul Tuten,JAX,bhayshul_tuten_jax
+NFL,Tyler Shough,NO,tyler_shough_no
+NFL,D'Andre Swift,CHI,dandre_swift_chi
+NFL,Luther Burden III,CHI,luther_burden_iii_chi

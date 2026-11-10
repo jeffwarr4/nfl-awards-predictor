@@ -1,31 +1,31 @@
 player_key,rank,rank_delta,movement,player_name,team,position,model_score,games,team_games,win_pct,passer_rating,total_tds,td_int,total_yards,pass_ypg,rush_yards,season,through_week,updated_utc,player_id,chips,why_blurb
-josh_allen_buf,1,0,–,Josh Allen,BUF,QB,0.999968,7,7,0.857,101.1,20,2.2,2064,256.1,270,2026,8,2026-11-03 18:01,00-0034857,Efficient passer | Dual threat | Winning team,"101.1 rating, 20 TDs vs 9 INTs, and .857 team win rate lead MVP case."
-brock_purdy_sf,2,1,↑1,Brock Purdy,SF,QB,0.999888,7,7,0.857,110.1,16,3.75,1909,249.7,161,2026,8,2026-11-03 18:01,00-0037834,Efficient passer | TD-INT ratio | Dual threat,110.1 rating and 3.8 TD:INT ratio with 249.7 pass YPG leads 85.7% winning team.
-joe_burrow_cin,3,3,↑3,Joe Burrow,CIN,QB,0.999673,7,7,0.714,111.6,22,3.33,2185,302.1,70,2026,8,2026-11-03 18:01,00-0036442,Elite efficiency | High TD ratio | Winning team,111.6 rating with 3.3 TD:INT ratio and .714 team win percentage drives MVP case.
-jared_goff_det,4,-2,↓2,Jared Goff,DET,QB,0.999543,7,7,0.714,110.0,16,15.0,1979,280.6,15,2026,8,2026-11-03 18:01,00-0033106,,
-jahmyr_gibbs_det,5,0,–,Jahmyr Gibbs,DET,RB,0.999469,7,7,0.714,,10,,1058,,773,2026,8,2026-11-03 18:01,00-0039139,,
-trevor_lawrence_jax,6,1,↑1,Trevor Lawrence,JAX,QB,0.997392,7,7,0.714,112.6,17,4.25,1770,241.4,80,2026,8,2026-11-03 18:01,00-0036971,,
-drake_maye_ne,7,1,↑1,Drake Maye,NE,QB,0.992616,8,8,0.625,100.4,18,1.88,2199,247.9,216,2026,8,2026-11-03 18:01,00-0039851,,
-kenneth_walker_iii_kc,8,-4,↓4,Kenneth Walker III,KC,RB,0.990161,7,7,0.714,,8,,901,,770,2026,8,2026-11-03 18:01,00-0038134,,
-james_cook_buf,9,1,↑1,James Cook,BUF,RB,0.978721,7,7,0.857,,7,,817,,707,2026,8,2026-11-03 18:01,00-0037248,,
-patrick_mahomes_kc,10,-1,↓1,Patrick Mahomes,KC,QB,0.977058,7,7,0.714,99.7,13,3.0,1872,256.4,77,2026,8,2026-11-03 18:01,00-0033873,,
-jaxon_smith_njigba_sea,11,,NEW,Jaxon Smith-Njigba,SEA,WR,0.962477,8,8,0.5,,9,,1028,,29,2026,8,2026-11-03 18:01,00-0038543,,"1,028 yards and 9 TDs are strong, but 4-4 record limits MVP consideration"
-jaylen_warren_pit,12,0,–,Jaylen Warren,PIT,RB,0.96074,8,8,0.75,,3,,998,,704,2026,8,2026-11-03 18:01,00-0037228,,3 TDs and 998 yards trail Cook's 7 TDs despite similar rushing output
-jordan_love_gb,13,3,↑3,Jordan Love,GB,QB,0.93903,8,8,0.625,92.4,17,2.67,2256,280.8,10,2026,8,2026-11-03 18:01,00-0036264,,"17 TDs lead all QBs, but Packers' 5-3 record trails Mahomes' 5-2 Chiefs"
-caleb_williams_chi,14,,NEW,Caleb Williams,CHI,QB,0.897129,5,8,0.75,104.6,8,6.0,1396,253.4,129,2026,8,2026-11-03 18:01,00-0039918,,"Strong rating and team record, but 5 fewer TDs than Mahomes"
-kirk_cousins_lv,15,6,↑6,Kirk Cousins,LV,QB,0.891701,8,8,0.5,101.4,20,3.8,2131,265.5,7,2026,8,2026-11-03 18:01,00-0029604,,"20 TDs and 101.4 rating top Mahomes, but 4-4 record keeps him out"
-bo_nix_den,16,4,↑4,Bo Nix,DEN,QB,0.852528,8,8,0.75,83.6,11,3.0,1607,186.6,114,2026,8,2026-11-03 18:01,00-0039732,,
-dak_prescott_dal,17,-4,↓4,Dak Prescott,DAL,QB,0.784996,8,8,0.375,93.2,15,2.8,2147,255.8,101,2026,8,2026-11-03 18:01,00-0033077,,
-deshaun_watson_cle,18,-7,↓7,Deshaun Watson,CLE,QB,0.732079,8,8,0.625,91.2,8,2.33,2023,225.8,217,2026,8,2026-11-03 18:01,00-0033537,,
-tee_higgins_cin,19,,NEW,Tee Higgins,CIN,WR,0.708579,7,7,0.714,,4,,726,,0,2026,8,2026-11-03 18:01,00-0036410,,
-christian_mccaffrey_sf,20,-1,↓1,Christian McCaffrey,SF,RB,0.704173,7,7,0.857,,8,,640,,389,2026,8,2026-11-03 18:01,00-0033280,,
-kyler_murray_min,21,-4,↓4,Kyler Murray,MIN,QB,0.679396,6,7,0.857,86.6,5,1.67,1189,170.3,167,2026,8,2026-11-03 18:01,00-0035228,,
-bijan_robinson_atl,22,-8,↓8,Bijan Robinson,ATL,RB,0.616273,8,8,0.375,,5,,983,,780,2026,8,2026-11-03 18:01,00-0038542,,
-bhayshul_tuten_jax,23,4,↑4,Bhayshul Tuten,JAX,RB,0.573663,7,7,0.714,,6,,673,,492,2026,8,2026-11-03 18:01,00-0040719,,
-matthew_stafford_la,24,-2,↓2,Matthew Stafford,LA,QB,0.566432,8,8,0.5,93.2,15,1.88,2164,268.2,18,2026,8,2026-11-03 18:01,00-0026498,,
-dandre_swift_chi,25,-2,↓2,D'Andre Swift,CHI,RB,0.50191,8,8,0.75,,10,,707,,545,2026,8,2026-11-03 18:01,00-0036275,,
-amon_ra_st_brown_det,26,,NEW,Amon-Ra St. Brown,DET,WR,0.459732,7,7,0.714,,5,,580,,9,2026,8,2026-11-03 18:01,00-0036963,,
-christian_watson_gb,27,,NEW,Christian Watson,GB,WR,0.413914,8,8,0.625,,6,,708,,0,2026,8,2026-11-03 18:01,00-0038124,,
-aaron_jones_min,28,-13,↓13,Aaron Jones,MIN,RB,0.342459,7,7,0.857,,2,,548,,458,2026,8,2026-11-03 18:01,00-0033293,,
-bryce_young_car,29,-11,↓11,Bryce Young,CAR,QB,0.321658,7,7,0.429,89.1,14,2.6,1955,274.4,34,2026,8,2026-11-03 18:01,00-0039150,,
-aaron_rodgers_pit,30,-6,↓6,Aaron Rodgers,PIT,QB,0.320931,8,8,0.75,86.2,13,2.17,1894,233.9,23,2026,8,2026-11-03 18:01,00-0023459,,
+josh_allen_buf,1,0,–,Josh Allen,BUF,QB,0.999917,8,8,0.875,99.3,21,2.0,2313,253.4,285,2026,9,2026-11-10 15:19,00-0034857,Elite efficiency | Dual threat | Winning team,"99.3 rating, 2.0 TD:INT ratio, and .875 win percentage lead MVP case."
+brock_purdy_sf,2,0,–,Brock Purdy,SF,QB,0.999912,8,8,0.875,109.8,19,3.4,2181,247.5,201,2026,9,2026-11-10 15:19,00-0037834,Elite efficiency | Turnover control | Dual threat,109.8 rating with 3.4 TD:INT ratio and .875 team win percentage leads MVP case.
+joe_burrow_cin,3,0,–,Joe Burrow,CIN,QB,0.999881,8,8,0.75,114.8,26,3.83,2463,298.2,77,2026,9,2026-11-10 15:19,00-0036442,Efficient passer | TD-focused arm | Winning team,114.8 rating and 3.8 TD:INT ratio with .750 team win percentage drives MVP case.
+jahmyr_gibbs_det,4,1,↑1,Jahmyr Gibbs,DET,RB,0.998747,8,8,0.75,,11,,1132,,847,2026,9,2026-11-10 15:19,00-0039139,,
+jared_goff_det,5,-1,↓1,Jared Goff,DET,QB,0.99808,8,8,0.75,106.4,16,7.5,2154,266.8,20,2026,9,2026-11-10 15:19,00-0033106,,
+trevor_lawrence_jax,6,0,–,Trevor Lawrence,JAX,QB,0.998061,8,8,0.75,111.7,18,4.5,2011,241.5,79,2026,9,2026-11-10 15:19,00-0036971,,
+kenneth_walker_iii_kc,7,1,↑1,Kenneth Walker III,KC,RB,0.99572,8,8,0.75,,11,,1044,,872,2026,9,2026-11-10 15:19,00-0038134,,
+patrick_mahomes_kc,8,2,↑2,Patrick Mahomes,KC,QB,0.98854,8,8,0.75,101.8,15,3.5,2122,254.6,85,2026,9,2026-11-10 15:19,00-0033873,,
+jordan_love_gb,9,4,↑4,Jordan Love,GB,QB,0.987789,9,9,0.667,97.9,21,3.17,2641,290.9,23,2026,9,2026-11-10 15:19,00-0036264,,
+james_cook_buf,10,-1,↓1,James Cook,BUF,RB,0.981798,8,8,0.875,,8,,924,,814,2026,9,2026-11-10 15:19,00-0037248,,
+drake_maye_ne,11,-4,↓4,Drake Maye,NE,QB,0.962387,9,9,0.556,96.8,21,1.64,2501,253.6,219,2026,9,2026-11-10 15:19,00-0039851,,Patriots at .556 wins; Love's team at .667 despite similar TD totals
+jaylen_warren_pit,12,0,–,Jaylen Warren,PIT,RB,0.96074,8,8,0.75,,3,,998,,704,2026,9,2026-11-10 15:19,00-0037228,,3 TDs and weaker team record (6-2) trail Cook's 8 TDs and 7-1 start
+jaxon_smith_njigba_sea,13,-2,↓2,Jaxon Smith-Njigba,SEA,WR,0.940305,9,9,0.556,,9,,1079,,29,2026,9,2026-11-10 15:19,00-0038543,,"1,079 yards and 9 TDs are strong, but 5-4 record trails top-10 contenders"
+bo_nix_den,14,2,↑2,Bo Nix,DEN,QB,0.91986,9,9,0.778,84.7,13,2.75,1846,192.2,116,2026,9,2026-11-10 15:19,00-0039732,,13 TDs and 192.2 pass YPG trail Love's 21 TDs and 290.9 YPG
+dak_prescott_dal,15,2,↑2,Dak Prescott,DAL,QB,0.893909,9,9,0.444,95.3,17,3.2,2483,264.6,102,2026,9,2026-11-10 15:19,00-0033077,,4-5 record and 17 TDs lag Love's 6-3 team and 21 TDs
+caleb_williams_chi,16,-2,↓2,Caleb Williams,CHI,QB,0.765986,6,9,0.778,95.4,10,1.6,1691,257.7,145,2026,9,2026-11-10 15:19,00-0039918,,
+christian_mccaffrey_sf,17,3,↑3,Christian McCaffrey,SF,RB,0.76513,8,8,0.875,,10,,727,,457,2026,9,2026-11-10 15:19,00-0033280,,
+kirk_cousins_lv,18,-3,↓3,Kirk Cousins,LV,QB,0.701736,9,9,0.444,97.1,22,2.5,2347,260.0,7,2026,9,2026-11-10 15:19,00-0029604,,
+christian_watson_gb,19,8,↑8,Christian Watson,GB,WR,0.697749,9,9,0.667,,7,,879,,0,2026,9,2026-11-10 15:19,00-0038124,,
+tee_higgins_cin,20,-1,↓1,Tee Higgins,CIN,WR,0.680123,8,8,0.75,,6,,758,,0,2026,9,2026-11-10 15:19,00-0036410,,
+matthew_stafford_la,21,3,↑3,Matthew Stafford,LA,QB,0.669443,9,9,0.556,90.6,16,1.78,2393,263.8,19,2026,9,2026-11-10 15:19,00-0026498,,
+bijan_robinson_atl,22,0,–,Bijan Robinson,ATL,RB,0.598047,9,9,0.333,,6,,1130,,880,2026,9,2026-11-10 15:19,00-0038542,,
+cj_stroud_hou,23,,NEW,C.J. Stroud,HOU,QB,0.531702,8,8,0.375,104.8,17,8.0,2351,281.4,100,2026,9,2026-11-10 15:19,00-0039163,,
+amon_ra_st_brown_det,24,2,↑2,Amon-Ra St. Brown,DET,WR,0.518734,8,8,0.75,,5,,666,,9,2026,9,2026-11-10 15:19,00-0036963,,
+jamarr_chase_cin,25,,NEW,Ja'Marr Chase,CIN,WR,0.490281,8,8,0.75,,7,,647,,0,2026,9,2026-11-10 15:19,00-0036900,,
+matthew_golden_gb,26,,NEW,Matthew Golden,GB,WR,0.453488,9,9,0.667,,5,,789,,6,2026,9,2026-11-10 15:19,00-0040667,,
+bhayshul_tuten_jax,27,-4,↓4,Bhayshul Tuten,JAX,RB,0.425792,8,8,0.75,,7,,702,,521,2026,9,2026-11-10 15:19,00-0040719,,
+tyler_shough_no,28,,NEW,Tyler Shough,NO,QB,0.388304,8,8,0.375,91.2,16,2.33,2148,248.2,162,2026,9,2026-11-10 15:19,00-0040743,,
+dandre_swift_chi,29,-4,↓4,D'Andre Swift,CHI,RB,0.372527,9,9,0.778,,10,,738,,576,2026,9,2026-11-10 15:19,00-0036275,,
+luther_burden_iii_chi,30,,NEW,Luther Burden III,CHI,WR,0.36923,9,9,0.778,,4,,673,,29,2026,9,2026-11-10 15:19,00-0040735,,
