@@ -99,6 +99,13 @@ while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` brid
 
 **Legacy.** `outputs/` and `docs/outputs/` (GitHub Pages copies of the 2025 Canva CSVs) are no longer written.
 
+**Weekly and final boards (`scripts/snapshot_board.py`, the same file in all four awards repos).** The
+workflow's "Keep this week's board" step, just before the commit, copies `board_mvp_latest.csv` to `board_mvp_wkNN.csv` (NN = `through_week`), which is never
+pruned (`ARCHIVES_TO_KEEP` only prunes the timestamped run files). A same-week rerun overwrites that copy. After the
+season's last regular-season board, run `python scripts/snapshot_board.py --final` once and commit: it writes
+`board_mvp_final.csv`, which the website's season archive pages read. Don't edit or delete the weekly or final files; they're the
+season history.
+
 ## Automation
 
 `.github/workflows/weekly-mvp.yml`: started Tuesdays 15:17 UTC, Sep–Feb, by the stinger-scheduler Cloudflare Worker (`stinger-website/scheduler`); its own cron (Tuesdays 17:17 UTC) is a late backup. Plus manual dispatch. Checks out
