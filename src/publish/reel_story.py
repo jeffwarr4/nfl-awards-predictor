@@ -1,0 +1,110 @@
+"""
+Pick the one story the weekly reel tells, from this week's board and last week's ranks.
+
+The first rule that matches wins:
+  1. new_no1              the rank-1 player changed
+  2. top5_climber         biggest climb (>= REEL_MIN_CLIMB) by a player who landed in the top REEL_TOP_SPOTS
+  3. bubble_breakthrough  from rank 11+ last week into the top 10 (biggest jump)
+  4. top5_drop            biggest drop (>= REEL_MIN_DROP) by a player who was top REEL_TOP_SPOTS last week
+  5. profile_no1          fallback: the current #1. Always used when there is no previous board
+                          (first board of a season, when everyone is NEW).
+
+Movement is within the saved top 30 (BOARD_DEPTH): a player who wasn't on last week's board has no
+previous rank, so only rules 1 and 5 can feature him; a former top-5 player who fell off the board
+entirely has no row to show and is skipped by rule 4.
+
+pick_story is pure: board rows + {player_id: previous rank} in, Story out.
+"""
+
+from __future__ import annotations
+
+from dataclasses import dataclass
+from pathlib import Path
+from typing import Dict, Optional
+
+import pandas as pd
+
+from config import REEL_MIN_CLIMB, REEL_MIN_DROP, REEL_TOP_SPOTS, TOP_N
+
+
+@dataclass
+class Story:
+    story_type: str
+    player: pd.Series             # the featured board row
+    prev_rank: Optional[int]      # None when he wasn't on last week's board (or there was none)
+    cur_rank: int
+    hook: str
+    reason: str                   # one line on why this rule fired (printed, saved in reel_meta.json)
+
+
+def load_prev_ranks(prev_path: Path) -> Dict[str, int]:
+    """{player_id: rank} from .prev_board_mvp.csv; empty when there is no previous board."""
+    if not Path(prev_path).exists():
+        return {}
+    p = pd.read_csv(prev_path, dtype={"player_id": str})
+    return dict(zip(p["player_id"].astype(str), p["rank"].astype(int)))
+
+
+def _hook(story_type: str, prev: Optional[int], cur: int) -> str:
+    if story_type == "new_no1":
+        return "There's a new No. 1 in our MVP model"
+    if story_type == "top5_climber":
+        return f"Up {prev - cur} spots into the top 5"
+    if story_type == "bubble_breakthrough":
+        return f"From No. {prev} to No. {cur}: into the top 10"
+    if story_type == "top5_drop":
+        return f"Down {cur - prev} spots. What happened?"
+    return "Who leads our MVP model, and why?"
+
+
+def _story(story_type: str, row: pd.Series, prev: Optional[int], reason: str) -> Story:
+    cur = int(row["rank"])
+    return Story(story_type, row, prev, cur, _hook(story_type, prev, cur), reason)
+
+
+def pick_story(board: pd.DataFrame, prev_ranks: Dict[str, int]) -> Story:
+    b = board.sort_values("rank").reset_index(drop=True).copy()
+    b["player_id"] = b["player_id"].astype(str)
+    b["prev_rank"] = b["player_id"].map(prev_ranks)
+    no1 = b.iloc[0]
+
+    def prev_of(row) -> Optional[int]:
+        return None if pd.isna(row["prev_rank"]) else int(row["prev_rank"])
+
+    # 0. No baseline (first board of the season) or nobody carried over: everyone is NEW
+    if not prev_ranks or b["prev_rank"].isna().all():
+        return _story("profile_no1", no1, None, "no previous board to compare with (everyone is NEW)")
+
+    # 1. New #1
+    prev_no1 = min(prev_ranks, key=prev_ranks.get)
+    if prev_no1 != no1["player_id"]:
+        p = prev_of(no1)
+        was = f"No. {p}" if p else "off our top 30"
+        return _story("new_no1", no1, p, f"{no1['player_name']} took over No. 1 (was {was} last week)")
+
+    known = b[b["prev_rank"].notna()].copy()
+    known["delta"] = known["prev_rank"] - known["rank"]     # + = climbed
+
+    # 2. Biggest climber who landed in the top 5
+    climbers = known[(known["rank"] <= REEL_TOP_SPOTS) & (known["delta"] >= REEL_MIN_CLIMB)]
+    if not climbers.empty:
+        r = climbers.sort_values(["delta", "rank"], ascending=[False, True]).iloc[0]
+        return _story("top5_climber", r, prev_of(r),
+                      f"{r['player_name']} climbed {int(r['delta'])} spots into the top {REEL_TOP_SPOTS}")
+
+    # 3. Bubble breakthrough: 11+ last week, top 10 now
+    risers = known[(known["prev_rank"] > TOP_N) & (known["rank"] <= TOP_N)]
+    if not risers.empty:
+        r = risers.sort_values(["delta", "rank"], ascending=[False, True]).iloc[0]
+        return _story("bubble_breakthrough", r, prev_of(r),
+                      f"{r['player_name']} moved from No. {prev_of(r)} into the top {TOP_N}")
+
+    # 4. Biggest drop by a former top-5 player (still on the board)
+    drops = known[(known["prev_rank"] <= REEL_TOP_SPOTS) & (known["delta"] <= -REEL_MIN_DROP)]
+    if not drops.empty:
+        r = drops.sort_values(["delta", "rank"], ascending=[True, True]).iloc[0]
+        return _story("top5_drop", r, prev_of(r),
+                      f"{r['player_name']} fell {-int(r['delta'])} spots from the top {REEL_TOP_SPOTS}")
+
+    # 5. Fallback
+    return _story("profile_no1", no1, prev_of(no1), "quiet week at the top: no rule above matched")

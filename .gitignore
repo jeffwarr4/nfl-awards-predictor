@@ -7,3 +7,7 @@ __pycache__/
 # OS / editor junk
 .DS_Store
 *.log
+
+# Weekly reel: the MP4 goes to a release asset, not git; scene frames are a local check
+predictions/*/reel/*.mp4
+predictions/*/reel/frames/
