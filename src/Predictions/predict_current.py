@@ -93,19 +93,52 @@ def load_weekly(season: int, through_week: int | None) -> pd.DataFrame:
     return w
 
 
-def team_records(season: int, through_week: int | None) -> pd.DataFrame:
+def team_results(season: int, through_week: int | None) -> pd.DataFrame:
+    """One row per team per played regular-season game: team, week, win (ties count as non-wins)."""
     sched = nfl.load_schedules([season]).to_pandas()
     played = sched[(sched["game_type"] == "REG")
                    & sched["home_score"].notna() & sched["away_score"].notna()]
     if through_week is not None:
         played = played[played["week"] <= through_week]
-    games = pd.concat([
-        pd.DataFrame({"team": played["home_team"],
+    return pd.concat([
+        pd.DataFrame({"team": played["home_team"], "week": played["week"],
                       "win": (played["home_score"] > played["away_score"]).astype(int)}),
-        pd.DataFrame({"team": played["away_team"],
+        pd.DataFrame({"team": played["away_team"], "week": played["week"],
                       "win": (played["away_score"] > played["home_score"]).astype(int)}),
-    ])
-    rec = games.groupby("team").agg(team_games=("win", "size"), wins=("win", "sum")).reset_index()
+    ], ignore_index=True)
+
+
+def team_records(season: int, through_week: int | None) -> pd.DataFrame:
+    rec = team_results(season, through_week).groupby("team") \
+        .agg(team_games=("win", "size"), wins=("win", "sum")).reset_index()
+    rec["win_pct"] = rec["wins"] / rec["team_games"]
+    return rec
+
+
+def player_records(weekly: pd.DataFrame, results: pd.DataFrame, week: int) -> pd.DataFrame:
+    """team_games, wins and win_pct per player from the teams he was on, stint by stint.
+
+    A stint is a run of weeks with one team: the first starts at week 1, each later one the week after the
+    previous stint's last game, and the last runs through `week`. A player who never changed teams gets his
+    team's full record (the same as team_records). One traded mid-season gets his old team's games and
+    results for his weeks there and his new team's after, instead of the new team's record for the whole
+    season (2026: Cousins, 9 games with LV then MIN, had been credited with MIN's 7-2 and paced on its 9 games).
+    """
+    stints = []
+    for pid, g in weekly.sort_values("week")[["player_id", "week", "team"]].groupby("player_id"):
+        runs: list = []
+        for team, wk in zip(g["team"], g["week"]):
+            if runs and runs[-1][0] == team:
+                runs[-1][2] = wk
+            else:
+                runs.append([team, wk, wk])
+        start = 1
+        for i, (team, _, last) in enumerate(runs):
+            stints.append((pid, team, start, week if i == len(runs) - 1 else last))
+            start = last + 1
+    s = pd.DataFrame(stints, columns=["player_id", "team", "start", "end"]).merge(results, on="team")
+    s = s[s["week"].between(s["start"], s["end"])]
+    rec = s.groupby("player_id").agg(team_games=("win", "size"), wins=("win", "sum")).reset_index()
     rec["win_pct"] = rec["wins"] / rec["team_games"]
     return rec
 
@@ -153,7 +186,9 @@ def build_board(season: int, through_week: int | None = None) -> tuple[pd.DataFr
         return pd.DataFrame(), 0
     week = int(weekly["week"].max())
 
-    players = season_to_date(weekly).merge(team_records(season, week), on="team", how="left")
+    # Record and team games by stint, so a traded player isn't given his new team's season (player_records)
+    players = season_to_date(weekly).merge(
+        player_records(weekly, team_results(season, week), week), on="player_id", how="left")
     players = players[players["position"].isin(BOARD_POSITIONS) & players["team_games"].gt(0)]
     players = players[players["games"] / players["team_games"] >= MIN_TEAM_GAME_SHARE]
     if players.empty:
