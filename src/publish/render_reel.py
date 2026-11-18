@@ -47,7 +47,7 @@ from src.publish.render_graphics import (
     load_headshot, load_headshot_placeholder, load_logo, placeholder_background, select_top_stats, text_w,
     wrap_text,
 )
-from src.publish.stats import STAT_COLS, STAT_LABELS, format_stat
+from src.publish.stats import STAT_LABELS, format_stat, stat_cols_for
 
 W, H = REEL_SIZE
 CX = W // 2
@@ -473,7 +473,7 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     pool = board[board["rank"] <= TOP_N]
     if int(story.player["rank"]) > TOP_N:
         pool = pd.concat([pool, story.player.to_frame().T])
-    chips = select_top_stats(story.player, pool, STAT_COLS, n=3)
+    chips = select_top_stats(story.player, pool, stat_cols_for(story.player), n=3)
 
     script = generate_reel_script(story, board, chips, season, week) if write_script else None
     reel = Reel(story, board, chips, script, season, week)
