@@ -4,7 +4,6 @@ NFL,Joe Burrow,CIN,joe_burrow_cin
 NFL,Josh Allen,BUF,josh_allen_buf
 NFL,Jahmyr Gibbs,DET,jahmyr_gibbs_det
 NFL,Trevor Lawrence,JAX,trevor_lawrence_jax
-NFL,Kirk Cousins,MIN,kirk_cousins_min
 NFL,Patrick Mahomes,KC,patrick_mahomes_kc
 NFL,Jared Goff,DET,jared_goff_det
 NFL,James Cook,BUF,james_cook_buf
@@ -18,6 +17,7 @@ NFL,Drake Maye,NE,drake_maye_ne
 NFL,Matthew Stafford,LA,matthew_stafford_la
 NFL,Dak Prescott,DAL,dak_prescott_dal
 NFL,Jaylen Warren,PIT,jaylen_warren_pit
+NFL,Kirk Cousins,MIN,kirk_cousins_min
 NFL,Amon-Ra St. Brown,DET,amon_ra_st_brown_det
 NFL,Caleb Williams,CHI,caleb_williams_chi
 NFL,Tee Higgins,CIN,tee_higgins_cin

@@ -21,9 +21,9 @@
       "value": "2,591"
     },
     {
-      "stat": "passer_rating",
-      "label": "Rating",
-      "value": "115.2"
+      "stat": "total_tds",
+      "label": "Total TD",
+      "value": "22"
     },
     {
       "stat": "win_pct",
@@ -33,23 +33,24 @@
   ],
   "captions": [
     "2,591 total yards",
+    "22 total touchdowns",
     "115.2 passer rating",
-    ".889 team win rate"
+    "4.0 TD:INT ratio"
   ],
-  "instagram_caption": "Brock Purdy moved up to No. 1 on our MVP board after Week 10, with a 115.2 passer rating and 22 total touchdowns for an 8-1 San Francisco team. Full board at stingercollectibles.com",
+  "instagram_caption": "Brock Purdy is the new No. 1 in our MVP model after Week 10, up from No. 2 with a 115.2 rating and 22 total touchdowns for the 8-1 49ers. Full board at stingercollectibles.com",
   "hashtags": [
     "#StingerNFL",
-    "#BrockPurdy",
     "#NFLMVP",
+    "#BrockPurdy",
     "#FTTB",
     "#NFLWeek10"
   ],
   "script_model": "claude-opus-5-5",
-  "script_words": 73,
+  "script_words": 69,
   "warnings": [],
   "video": "reel_latest.mp4",
   "duration_s": 27,
   "release_tag": "reel-latest",
   "release_asset": "nfl_reel_2026_wk10.mp4",
-  "updated_utc": "2026-11-18 02:42"
+  "updated_utc": "2026-11-18 02:58"
 }
