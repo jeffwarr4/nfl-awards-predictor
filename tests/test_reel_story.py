@@ -34,6 +34,19 @@ def test_new_no1():
     assert (s.story_type, s.player["player_id"], s.prev_rank, s.cur_rank) == ("new_no1", "p3", 3, 1)
 
 
+def test_back_to_no1():
+    now = ["p3", "p1", "p2"] + BASE[3:]
+    s = pick_story(board(now), ranks(BASE), past_no1=frozenset({"p3"}))
+    assert (s.story_type, s.hook, s.prev_rank) == ("back_to_no1", "Back at No. 1", 3)
+
+
+def test_rank_history():
+    from src.publish.reel_story import rank_history
+    h = pd.DataFrame({"week": [6, 6, 7], "player_id": ["p1", "p2", "p2"], "rank": [1, 2, 1]})
+    assert rank_history(h, "p1") == "Week 6: No. 1, Week 7: not on the board"
+    assert rank_history(pd.DataFrame(columns=["week", "player_id", "rank"]), "p1") == ""
+
+
 def test_new_no1_from_off_the_board():
     now = ["new"] + BASE[:14]
     s = pick_story(board(now), ranks(BASE))

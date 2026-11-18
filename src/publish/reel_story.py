@@ -2,7 +2,7 @@
 Pick the one story the weekly reel tells, from this week's board and last week's ranks.
 
 The first rule that matches wins:
-  1. new_no1              the rank-1 player changed
+  1. new_no1              the rank-1 player changed (back_to_no1 if he was No. 1 earlier this season)
   2. top5_climber         biggest climb (>= REEL_MIN_CLIMB) by a player who landed in the top REEL_TOP_SPOTS
   3. bubble_breakthrough  from rank 11+ last week into the top 10 (biggest jump)
   4. top5_drop            biggest drop (>= REEL_MIN_DROP) by a player who was top REEL_TOP_SPOTS last week
@@ -49,6 +49,8 @@ def load_prev_ranks(prev_path: Path) -> Dict[str, int]:
 def _hook(story_type: str, prev: Optional[int], cur: int) -> str:
     if story_type == "new_no1":
         return "There's a new No. 1 in our MVP model"
+    if story_type == "back_to_no1":
+        return "Back at No. 1"
     if story_type == "top5_climber":
         return f"Up {prev - cur} spots into the top 5"
     if story_type == "bubble_breakthrough":
@@ -63,7 +65,30 @@ def _story(story_type: str, row: pd.Series, prev: Optional[int], reason: str) ->
     return Story(story_type, row, prev, cur, _hook(story_type, prev, cur), reason)
 
 
-def pick_story(board: pd.DataFrame, prev_ranks: Dict[str, int]) -> Story:
+def load_history(outdir: Path, before_week: int) -> pd.DataFrame:
+    """week, player_id, player_name, rank from the season's weekly boards (board_mvp_wkNN.csv, written by
+    scripts/snapshot_board.py) for weeks before before_week. Empty when there are none (e.g. a replay folder)."""
+    frames = []
+    for f in sorted(Path(outdir).glob("board_mvp_wk*.csv")):
+        d = pd.read_csv(f, dtype={"player_id": str}, usecols=lambda c: c in ("through_week", "player_id", "player_name", "rank"))
+        if len(d) and int(d["through_week"].iloc[0]) < before_week:
+            frames.append(d.rename(columns={"through_week": "week"}))
+    return pd.concat(frames, ignore_index=True) if frames else pd.DataFrame(columns=["week", "player_id", "player_name", "rank"])
+
+
+def rank_history(history: pd.DataFrame, player_id: str) -> str:
+    """'Week 6: No. 1, Week 7: No. 3, ...' for one player, or '' with no history."""
+    if history.empty:
+        return ""
+    weeks = sorted(history["week"].unique())
+    mine = dict(zip(*history[history["player_id"].astype(str) == str(player_id)][["week", "rank"]].values.T)) \
+        if (history["player_id"].astype(str) == str(player_id)).any() else {}
+    return ", ".join(f"Week {int(w)}: " + (f"No. {int(mine[w])}" if w in mine else "not on the board") for w in weeks)
+
+
+def pick_story(board: pd.DataFrame, prev_ranks: Dict[str, int], past_no1: frozenset = frozenset()) -> Story:
+    """past_no1: player_ids who were No. 1 on any earlier week's board this season. A No. 1 who held the
+    spot before is "back_to_no1", not "new_no1" (2026 Week 10: Purdy was No. 1 in Week 6, then 3, 2, 2)."""
     b = board.sort_values("rank").reset_index(drop=True).copy()
     b["player_id"] = b["player_id"].astype(str)
     b["prev_rank"] = b["player_id"].map(prev_ranks)
@@ -76,11 +101,14 @@ def pick_story(board: pd.DataFrame, prev_ranks: Dict[str, int]) -> Story:
     if not prev_ranks or b["prev_rank"].isna().all():
         return _story("profile_no1", no1, None, "no previous board to compare with (everyone is NEW)")
 
-    # 1. New #1
+    # 1. New #1, or back at #1 if he held it earlier this season
     prev_no1 = min(prev_ranks, key=prev_ranks.get)
     if prev_no1 != no1["player_id"]:
         p = prev_of(no1)
         was = f"No. {p}" if p else "off our top 30"
+        if no1["player_id"] in past_no1:
+            return _story("back_to_no1", no1, p,
+                          f"{no1['player_name']} is back at No. 1 (was {was} last week; No. 1 earlier this season)")
         return _story("new_no1", no1, p, f"{no1['player_name']} took over No. 1 (was {was} last week)")
 
     known = b[b["prev_rank"].notna()].copy()
