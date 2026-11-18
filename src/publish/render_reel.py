@@ -41,7 +41,7 @@ from config import (
     REEL_SAFE_LEFT, REEL_SAFE_RIGHT, REEL_SAFE_TOP, REEL_SCENES, REEL_SIZE, TOP_N,
 )
 from src.publish.reel_script import generate_reel_script
-from src.publish.reel_story import Story, load_prev_ranks, pick_story
+from src.publish.reel_story import Story, load_history, load_prev_ranks, pick_story, rank_history
 from src.publish.render_graphics import (
     BLACK, DOWN, GOLD, GREY, HEADSHOTS_DIR, UP, WHITE, _font, circle_headshot, draw_movement, fit_text,
     load_headshot, load_headshot_placeholder, load_logo, placeholder_background, select_top_stats, text_w,
@@ -506,8 +506,12 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     board = pd.read_csv(outdir / "board_mvp_latest.csv", dtype={"player_id": str})
     season, week = int(board["season"].iloc[0]), int(board["through_week"].iloc[0])
     spec = json.loads(Path(story_file).read_text(encoding="utf-8")) if story_file else None
+    # Earlier weeks' boards (board_mvp_wkNN.csv): who has held No. 1, and the featured player's path this season
+    history = load_history(outdir, week)
+    past_no1 = frozenset(history.loc[history["rank"] == 1, "player_id"].astype(str))
     story = _story_from_file(spec, board) if spec else \
-        pick_story(board, load_prev_ranks(outdir / ".prev_board_mvp.csv"))
+        pick_story(board, load_prev_ranks(outdir / ".prev_board_mvp.csv"), past_no1)
+    path = rank_history(history, str(story.player["player_id"]))
     print(f"Reel story: {story.story_type} — {story.player['player_name']} "
           f"({'NEW' if story.prev_rank is None else f'No. {story.prev_rank}'} -> No. {story.cur_rank}). {story.reason}")
 
@@ -521,7 +525,7 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     if spec and spec.get("script"):
         script = _prepared_script(spec)
     else:
-        script = generate_reel_script(story, board, chips, season, week) if write_script else None
+        script = generate_reel_script(story, board, chips, season, week, path) if write_script else None
     reel = Reel(story, board, cards, script, season, week, featured_movement=spec is None)
     reel_dir = outdir / "reel"
     reel_dir.mkdir(parents=True, exist_ok=True)
@@ -534,7 +538,7 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
         "sport": "nfl", "season": season, "through_week": week, "stats_through": f"Week {week}",
         "story_type": story.story_type, "hook": story.hook, "reason": story.reason,
         "player": {k: str(p[k]) for k in ("player_name", "team", "position", "player_key")},
-        "prev_rank": story.prev_rank, "cur_rank": story.cur_rank,
+        "prev_rank": story.prev_rank, "cur_rank": story.cur_rank, "season_ranks": path,
         "stat_chips": [{"label": l, "value": v} for l, v in cards],
         "captions": (script or {}).get("captions", []),
         "instagram_caption": (script or {}).get("instagram_caption", ""),

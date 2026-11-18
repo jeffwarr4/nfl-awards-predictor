@@ -1,0 +1,21 @@
+{
+  "name": "purdy_back",
+  "story_type": "back_to_no1",
+  "player_name": "Brock Purdy",
+  "prev_rank": 2,
+  "hook": "Back at No. 1",
+  "note": "Purdy was No. 1 in Week 6, slipped (No. 3 in Week 7, No. 2 in Weeks 8-9), and is No. 1 again after Week 10. Replaces the auto-picked 'new No. 1' story, which only looked at last week.",
+  "cards": [["Passer rating", "115.2"], ["Total TD", "22"], ["Team record", "8-1"]],
+  "script": {
+    "beats": [
+      {"scene": "hook", "text": "Guess who's back at No. 1 in our model."},
+      {"scene": "player", "text": "Brock Purdy. He led our board earlier this season, slipped for a few weeks, and now he's taken it back."},
+      {"scene": "why", "text": "Here's what jumped out to me. A 115.2 passer rating, 22 total touchdowns, and the Niners are 8-1."},
+      {"scene": "context", "text": "I'll be honest, Joe Burrow's right behind him at No. 2."},
+      {"scene": "cta", "text": "Want to see the rest? Full board at stingercollectibles.com"}
+    ],
+    "captions": ["115.2 passer rating", "22 total touchdowns", "Niners are 8-1"],
+    "instagram_caption": "Brock Purdy is back at No. 1 in our MVP model after Week 10. He led the board earlier this season and took it back with a 115.2 rating and 22 total touchdowns for the 8-1 49ers. Full board at stingercollectibles.com",
+    "hashtags": ["#StingerNFL", "#NFLMVP", "#BrockPurdy", "#FTTB", "#NFLWeek10"]
+  }
+}

@@ -53,6 +53,10 @@ Voice: Jeff, in the first person. A data guy talking to a friend about what his 
 
 Facts: use ONLY the facts in the user message. Never invent a stat, game, injury, streak or standing. Describe records only with the numbers given (don't call a record perfect or undefeated unless it has no losses; don't claim division or playoff positions). Write ranks as "No. 4". Numbers should be easy to say ("a 109.8 passer rating", "nineteen touchdowns" is fine either way).
 
+Make the case with how he's playing: passer rating, touchdowns, yards, efficiency, and the team's record. Don't use games played or availability ("he's played every game") as a selling point; it isn't an MVP argument.
+
+Season context: if the user message gives his rank by week, use it only as given. A "back_to_no1" story means he held No. 1 earlier this season and has taken it back; never call him new to No. 1 or say it's his first time there.
+
 Never show or imply a probability: no %, no "percent", "odds", "chance", "likely", "favorite", "lock", and no betting language at all. The model ranks players; it does not give anyone a percent chance.
 
 Structure: exactly five beats, one per scene, in order, each sized to its time window (about 2.7 words per second; the user message gives a target for each). The whole script is {lo}-{hi} words. The last beat ends with exactly: "{cta}"
@@ -93,7 +97,8 @@ def _player_line(p: pd.Series) -> str:
             f"{p.get('movement', '')} vs last week): {stat_line(p)}")
 
 
-def build_message(story: Story, board: pd.DataFrame, chip_stats: List[str], season: int, week: int) -> str:
+def build_message(story: Story, board: pd.DataFrame, chip_stats: List[str], season: int, week: int,
+                  history: str = "") -> str:
     p = story.player
     prev = (f"No. {story.prev_rank} last week" if story.prev_rank
             else "not ranked in our top 30 last week" if story.story_type != "profile_no1" or week > 1
@@ -105,6 +110,7 @@ def build_message(story: Story, board: pd.DataFrame, chip_stats: List[str], seas
         "",
         f"Featured player: {p['player_name']} ({p['team']}, {p['position']})",
         f"Rank: No. {story.cur_rank} this week, {prev}.",
+        *([f"His rank on our earlier boards this season: {history}."] if history else []),
         f"Team record: {_record(p)}. Games played: {int(p['games'])} of {int(p['team_games'])} team games.",
         f"Stats: {stat_line(p)}",
     ]
@@ -178,15 +184,16 @@ def _force_ending(data: dict) -> None:
 
 
 def generate_reel_script(story: Story, board: pd.DataFrame, chip_stats: List[str],
-                         season: int, week: int) -> Optional[dict]:
-    """{beats: [{scene, start, end, text}], captions, instagram_caption, hashtags, words, warnings}, or None."""
+                         season: int, week: int, history: str = "") -> Optional[dict]:
+    """{beats: [{scene, start, end, text}], captions, instagram_caption, hashtags, words, warnings}, or None.
+    history: the featured player's rank on earlier weekly boards (reel_story.rank_history)."""
     if not os.environ.get("ANTHROPIC_API_KEY"):
         print("[WARN] ANTHROPIC_API_KEY not set — reel script skipped")
         return None
     import anthropic
 
     client = anthropic.Anthropic()
-    message = build_message(story, board, chip_stats, season, week)
+    message = build_message(story, board, chip_stats, season, week, history)
     print(f"  Writing reel script ({REEL_MODEL})...")
     try:
         data = _ask(client, message)

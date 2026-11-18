@@ -106,7 +106,10 @@ while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` brid
 hold) plus a narration script Jeff records over it in CapCut; posted the day after the board. `reel_story.pick_story`
 (pure; `tests/test_reel_story.py`, run `python -m pytest tests/`) takes the first match: new #1, biggest climber into
 the top 5, 11+ into the top 10, biggest drop by a former top-5 player, else a profile of #1 (always on the first board,
-when everyone is NEW). `reel_script.py` writes five timed beats in Jeff's first-person voice on `REEL_MODEL`
+when everyone is NEW). A No. 1 who held the spot on an earlier weekly board (`board_mvp_wkNN.csv`) is "back at No. 1",
+not new; the script also gets the featured player's rank on each earlier weekly board (`load_history`, `rank_history`).
+Weeks 6–9 of 2026 were backfilled from git (each week's last board; Week 6 is the 10-row top 10, from before the
+30-deep board). `reel_script.py` writes five timed beats in Jeff's first-person voice on `REEL_MODEL`
 (Opus 5.5, with the API's refusal fallback; chips stay on Haiku) and checks the word count, the closing line, and that
 no %/odds/betting language slipped in. Scene timings, safe zones and thresholds are `REEL_*` in `config.py`. Frames are
 Pillow, encoded by imageio-ffmpeg's bundled ffmpeg (no system ffmpeg). Outputs in `predictions/{year}/reel/`:

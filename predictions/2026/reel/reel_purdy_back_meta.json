@@ -1,0 +1,52 @@
+{
+  "sport": "nfl",
+  "season": 2026,
+  "through_week": 10,
+  "stats_through": "Week 10",
+  "story_type": "back_to_no1",
+  "hook": "Back at No. 1",
+  "reason": "Purdy was No. 1 in Week 6, slipped (No. 3 in Week 7, No. 2 in Weeks 8-9), and is No. 1 again after Week 10. Replaces the auto-picked 'new No. 1' story, which only looked at last week.",
+  "player": {
+    "player_name": "Brock Purdy",
+    "team": "SF",
+    "position": "QB",
+    "player_key": "brock_purdy_sf"
+  },
+  "prev_rank": 2,
+  "cur_rank": 1,
+  "stat_chips": [
+    {
+      "label": "Passer rating",
+      "value": "115.2"
+    },
+    {
+      "label": "Total TD",
+      "value": "22"
+    },
+    {
+      "label": "Team record",
+      "value": "8-1"
+    }
+  ],
+  "captions": [
+    "115.2 passer rating",
+    "22 total touchdowns",
+    "Niners are 8-1"
+  ],
+  "instagram_caption": "Brock Purdy is back at No. 1 in our MVP model after Week 10. He led the board earlier this season and took it back with a 115.2 rating and 22 total touchdowns for the 8-1 49ers. Full board at stingercollectibles.com",
+  "hashtags": [
+    "#StingerNFL",
+    "#NFLMVP",
+    "#BrockPurdy",
+    "#FTTB",
+    "#NFLWeek10"
+  ],
+  "script_model": "hand-written",
+  "script_words": 67,
+  "warnings": [],
+  "video": "reel_purdy_back.mp4",
+  "duration_s": 27,
+  "release_tag": "reel-latest",
+  "release_asset": "nfl_reel_purdy_back_2026_wk10.mp4",
+  "updated_utc": "2026-11-18 21:49"
+}
