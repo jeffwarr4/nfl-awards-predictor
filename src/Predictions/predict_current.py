@@ -19,6 +19,7 @@ Outputs (predictions/{year}/)
   board_mvp_latest.csv       ← BOARD_DEPTH-deep board, same columns (+ archives); + chips, why_blurb after chips run
   .prev_board_mvp.csv        ← previous week's BOARD_DEPTH board; drives rank_delta / movement
   chip_data/, graphics/      ← chips, rendered board + bubble PNGs, caption (see src/publish/)
+  reel/                      ← weekly reel: MP4 (not committed), narration script, meta (render_reel.py)
 predictions/nfl_candidates.csv ← headshot candidates fetched by stinger-assets
 
 Run:
@@ -233,7 +234,7 @@ def write_candidates(board: pd.DataFrame, path: Path) -> None:
 # Main
 # ------------------------
 def run(season: int = CURRENT_YEAR, through_week: int | None = None,
-        outdir: Path | None = None, publish: bool = True) -> Path:
+        outdir: Path | None = None, publish: bool = True, reel: bool = True) -> Path:
     default_out = PREDICTIONS / str(season)
     outdir = Path(outdir or default_out)
     outdir.mkdir(parents=True, exist_ok=True)
@@ -278,6 +279,14 @@ def run(season: int = CURRENT_YEAR, through_week: int | None = None,
     if publish:
         write_candidates(board, candidates)
         publish_outputs(deep, outdir, season, week)
+        if reel:
+            # The reel is extra: a failure here must never cost the board, slides or caption.
+            # CI passes --no-reel and renders it as its own step, after missing headshots are fetched.
+            try:
+                from src.publish.render_reel import make_reel
+                make_reel(outdir)
+            except Exception as e:
+                print(f"  [WARN] Reel failed: {e}")
     return latest
 
 
@@ -314,9 +323,11 @@ def main() -> None:
                         help="replay the board as of this week (default: all played weeks)")
     parser.add_argument("--outdir", type=Path, default=None)
     parser.add_argument("--no-publish", action="store_true",
-                        help="skip candidates, chips, graphic and captions")
+                        help="skip candidates, chips, graphic, captions and the reel")
+    parser.add_argument("--no-reel", action="store_true",
+                        help="skip the weekly reel (CI renders it as a separate step)")
     args = parser.parse_args()
-    run(args.season, args.through_week, args.outdir, publish=not args.no_publish)
+    run(args.season, args.through_week, args.outdir, publish=not args.no_publish, reel=not args.no_reel)
 
 
 if __name__ == "__main__":

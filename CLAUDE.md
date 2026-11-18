@@ -32,6 +32,7 @@ python -m src.Predictions.predict_current          # live board + candidates + c
 python -m src.Predictions.predict_current --season 2025 --through-week 4 --outdir <scratch> --no-publish  # replay
 python -m src.publish.render_graphics              # re-render from predictions/{year}/top10_mvp_latest.csv
 python -m src.publish.generate_chips               # likewise; generate_captions too
+python -m src.publish.render_reel [--outdir DIR] [--frames-only] [--no-script]   # weekly reel from a board folder
 ```
 
 `mvp_winners.csv` is hand-maintained for recent seasons (2025 Stafford was added by hand); re-running the PFR
@@ -99,6 +100,19 @@ while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` brid
 
 **Legacy.** `outputs/` and `docs/outputs/` (GitHub Pages copies of the 2025 Canva CSVs) are no longer written.
 
+**Weekly reel (`src/publish/render_reel.py`).** One story per week as a silent 1080×1920 MP4 (25 s + 2 s
+hold) plus a narration script Jeff records over it in CapCut; posted the day after the board. `reel_story.pick_story`
+(pure; `tests/test_reel_story.py`, run `python -m pytest tests/`) takes the first match: new #1, biggest climber into
+the top 5, 11+ into the top 10, biggest drop by a former top-5 player, else a profile of #1 (always on the first board,
+when everyone is NEW). `reel_script.py` writes five timed beats in Jeff's first-person voice on `REEL_MODEL`
+(Opus 5.5, with the API's refusal fallback; chips stay on Haiku) and checks the word count, the closing line, and that
+no %/odds/betting language slipped in. Scene timings, safe zones and thresholds are `REEL_*` in `config.py`. Frames are
+Pillow, encoded by imageio-ffmpeg's bundled ffmpeg (no system ffmpeg). Outputs in `predictions/{year}/reel/`:
+`reel_script.txt` and `reel_meta.json` are committed; `reel_latest.mp4` is gitignored and goes to the repo's
+`reel-latest` release as `nfl_reel_{year}_wk{NN}.mp4` (`release_asset` in the meta). stinger-website's social-drafts
+job emails it from there. `--frames-only` saves one PNG per scene with the platform UI zones shaded, for layout checks.
+A replay folder needs the previous week replayed into it first, or everyone is NEW and the fallback is picked.
+
 **Weekly and final boards (`scripts/snapshot_board.py`, the same file in all four awards repos).** The
 workflow's "Keep this week's board" step, just before the commit, copies `board_mvp_latest.csv` to `board_mvp_wkNN.csv` (NN = `through_week`), which is never
 pruned (`ARCHIVES_TO_KEEP` only prunes the timestamped run files). A same-week rerun overwrites that copy. After the
@@ -120,3 +134,8 @@ ranks 1–15 (a player new to the slides isn't in stinger-assets until its daily
 file, i.e. after this run), and the slides are re-rendered if it downloaded any. If one still can't be found the run
 fails before committing, so a slide with a blank circle never reaches the site or the social draft: add the PNG to
 stinger-assets by hand (or fix the team alias there) and rerun.
+
+The prediction step runs `predict_current --no-reel`; the reel is its own step after the headshots (so a newly
+fetched headshot is in it), then uploaded to the `reel-latest` release (older weeks' assets deleted). Both are
+`continue-on-error`, so a reel failure never blocks the board commit. Locally, `predict_current` renders the reel
+after the caption unless `--no-reel` or `--no-publish`.
