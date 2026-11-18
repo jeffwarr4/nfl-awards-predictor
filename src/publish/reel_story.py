@@ -35,6 +35,7 @@ class Story:
     cur_rank: int
     hook: str
     reason: str                   # one line on why this rule fired (printed, saved in reel_meta.json)
+    labels: tuple = ("LAST WEEK", "THIS WEEK")   # over the rank, before and after it moves
 
 
 def load_prev_ranks(prev_path: Path) -> Dict[str, int]:

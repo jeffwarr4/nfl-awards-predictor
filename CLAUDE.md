@@ -114,6 +114,10 @@ Pillow, encoded by imageio-ffmpeg's bundled ffmpeg (no system ffmpeg). Outputs i
 `reel-latest` release as `nfl_reel_{year}_wk{NN}.mp4` (`release_asset` in the meta). stinger-website's social-drafts
 job emails it from there. `--frames-only` saves one PNG per scene with the platform UI zones shaded, for layout checks.
 A replay folder needs the previous week replayed into it first, or everyone is NEW and the fallback is picked.
+One-off reels (a correction, a feature): `render_reel --story predictions/{year}/reel/story_<name>.json` names the
+board player and the hook, and can set before/after labels, the Why cards, a note for the script, and a hand-written
+script (checked like a generated one). It writes `reel_<name>.*` beside the weekly files without touching them; upload
+the MP4 to the release by hand (the next weekly upload removes it). Example: `story_cousins_correction.json`.
 
 **Weekly and final boards (`scripts/snapshot_board.py`, the same file in all four awards repos).** The
 workflow's "Keep this week's board" step, just before the commit, copies `board_mvp_latest.csv` to `board_mvp_wkNN.csv` (NN = `through_week`), which is never

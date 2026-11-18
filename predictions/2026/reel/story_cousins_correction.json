@@ -1,0 +1,26 @@
+{
+  "name": "cousins_correction",
+  "story_type": "correction",
+  "player_name": "Kirk Cousins",
+  "prev_rank": 6,
+  "hook": "Our model had a bug. Here's the fix.",
+  "labels": ["BEFORE THE FIX", "AFTER THE FIX"],
+  "note": "Week 10: after his trade (9 games for LV, then MIN in Week 10) Cousins was credited with Minnesota's 7-2 record and paced on its 9 games. Counted by stint he is 5-5 over 10 games. Record fix alone: No. 6 -> No. 12; games fix alone: No. 9; both: No. 19.",
+  "cards": [
+    ["Record we used (MIN)", "7-2"],
+    ["His actual record", "5-5"],
+    ["Rank, record fix alone", "No. 12"]
+  ],
+  "script": {
+    "beats": [
+      {"scene": "hook", "text": "Our model had a bug this week. Here's the fix."},
+      {"scene": "player", "text": "Kirk Cousins jumped to No. 6. But he played nine games for the Raiders and just one for the Vikings."},
+      {"scene": "why", "text": "We were giving him Minnesota's 7-2 record. His real record is 5-5. Fixing just the record dropped him six spots."},
+      {"scene": "context", "text": "That's the evidence. Team performance moves this model. He's No. 19 now."},
+      {"scene": "cta", "text": "The corrected board is up. Full board at stingercollectibles.com"}
+    ],
+    "captions": ["Credited: Minnesota's 7-2", "Actual: 5-5 across both teams", "Record fix alone: down six"],
+    "instagram_caption": "Our model had a bug: after his trade, Kirk Cousins was credited with Minnesota's 7-2 record for nine Raiders games. With his real 5-5 he goes from No. 6 to No. 19, and the record alone was worth six spots. Full board at stingercollectibles.com",
+    "hashtags": ["#StingerNFL", "#NFLMVP", "#KirkCousins", "#Skol", "#NFLStats"]
+  }
+}
