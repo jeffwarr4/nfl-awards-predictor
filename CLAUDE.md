@@ -56,8 +56,10 @@ the weekly workflow does **not** retrain. Evaluation is leave-one-season-out on 
 winner #1 / top-3 / top-5 / mean rank — AUC is deliberately not reported (~1 positive per season).
 
 **Live scoring (`predict_current.py`)** — order matters:
-1. Weekly REG stats → season-to-date per player; team = most recent team; `passing_cpoe` is an
-   attempt-weighted mean across weeks, not a sum.
+1. Weekly REG stats → season-to-date per player; team = most recent team (logo, label); `passing_cpoe` is an
+   attempt-weighted mean across weeks, not a sum. `team_games` and `win_pct` come from `player_records`, by
+   stint: a traded player gets his old team's games and results for his weeks there, then the new team's
+   (2026 Cousins had been given MIN's 7-2 for nine Raiders games). Players on one team are unaffected.
 2. Eligibility: QB/RB/WR with games ≥ 60% of *his team's* played games (survives byes; the old `games >= 8`
    gate emptied the board through Week 7). WRs were added in 2026: receiving yards carry the largest positive
    coefficient, and adding them to the 2000–2025 backtest changed no winner's rank (record-pace WRs land ~8–15).
