@@ -32,7 +32,7 @@ from config import (
     BOARD_BACKGROUND, BUBBLE_BACKGROUND, BUBBLE_OVERLAY, BUBBLE_RANKS, BUBBLE_SLOTS,
     CURRENT_PRED_DIR, FONTS_DIR, STINGER_ASSETS_DIR,
 )
-from src.publish.stats import ESPN_TEAM_CODES, STAT_COLS, STAT_LABELS, format_stat
+from src.publish.stats import ESPN_TEAM_CODES, STAT_LABELS, format_stat, stat_cols_for
 
 HEADSHOTS_DIR = STINGER_ASSETS_DIR / "nfl" / "headshots"
 LOGOS_DIR     = STINGER_ASSETS_DIR / "nfl" / "logos"
@@ -323,7 +323,7 @@ def draw_card(canvas: Image.Image, player: pd.Series, pool_df: pd.DataFrame,
             y += box_h + 4
 
     # 6. 2×2 stat grid — the player's 4 standout stats within the top 10
-    top_stats = select_top_stats(player, pool_df, STAT_COLS, n=4, lower_is_better=LOWER_IS_BETTER)
+    top_stats = select_top_stats(player, pool_df, stat_cols_for(player), n=4, lower_is_better=LOWER_IS_BETTER)
     cell_w = CARD_COL_W // _CELL_COLS
     lbl_font, val_font = _font("fg_med_cond", 14), _font("fg_demi", 26)
     for i, col in enumerate(top_stats):
@@ -367,7 +367,7 @@ def draw_compact_row(canvas: Image.Image, player: pd.Series, pool_df: pd.DataFra
 
     lbl_font, val_font = _font("fg_med_cond", 15), _font("fg_demi", 20)
     sx, sy = text_x, row_top + 76
-    top_stats = select_top_stats(player, pool_df, STAT_COLS, n=2, lower_is_better=LOWER_IS_BETTER)
+    top_stats = select_top_stats(player, pool_df, stat_cols_for(player), n=2, lower_is_better=LOWER_IS_BETTER)
     for i, col in enumerate(top_stats):
         lbl, val = STAT_LABELS.get(col, col) + ":", format_stat(col, player.get(col))
         draw.text((sx, sy + 2), lbl, font=lbl_font, fill=GOLD)
