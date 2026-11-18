@@ -1,0 +1,52 @@
+{
+  "sport": "nfl",
+  "season": 2026,
+  "through_week": 10,
+  "stats_through": "Week 10",
+  "story_type": "correction",
+  "hook": "Our model had a bug. Here's the fix.",
+  "reason": "Week 10: after his trade (9 games for LV, then MIN in Week 10) Cousins was credited with Minnesota's 7-2 record and paced on its 9 games. Counted by stint he is 5-5 over 10 games. Record fix alone: No. 6 -> No. 12; games fix alone: No. 9; both: No. 19.",
+  "player": {
+    "player_name": "Kirk Cousins",
+    "team": "MIN",
+    "position": "QB",
+    "player_key": "kirk_cousins_min"
+  },
+  "prev_rank": 6,
+  "cur_rank": 19,
+  "stat_chips": [
+    {
+      "label": "Record we used (MIN)",
+      "value": "7-2"
+    },
+    {
+      "label": "His actual record",
+      "value": "5-5"
+    },
+    {
+      "label": "Rank, record fix alone",
+      "value": "No. 12"
+    }
+  ],
+  "captions": [
+    "Credited: Minnesota's 7-2",
+    "Actual: 5-5 across both teams",
+    "Record fix alone: down six"
+  ],
+  "instagram_caption": "Our model had a bug: after his trade, Kirk Cousins was credited with Minnesota's 7-2 record for nine Raiders games. With his real 5-5 he goes from No. 6 to No. 19, and the record alone was worth six spots. Full board at stingercollectibles.com",
+  "hashtags": [
+    "#StingerNFL",
+    "#NFLMVP",
+    "#KirkCousins",
+    "#Skol",
+    "#NFLStats"
+  ],
+  "script_model": "hand-written",
+  "script_words": 71,
+  "warnings": [],
+  "video": "reel_cousins_correction.mp4",
+  "duration_s": 27,
+  "release_tag": "reel-latest",
+  "release_asset": "nfl_reel_cousins_correction_2026_wk10.mp4",
+  "updated_utc": "2026-11-18 03:01"
+}

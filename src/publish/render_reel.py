@@ -211,9 +211,12 @@ def banner(width: int) -> Image.Image:
 # Scenes. Each draws onto a fresh copy of the background at local time t (seconds into the scene).
 # ─────────────────────────────────────────────────────────────────
 class Reel:
-    def __init__(self, story: Story, board: pd.DataFrame, chip_stats: List[str], script: Optional[dict],
-                 season: int, week: int):
-        self.s, self.board, self.chip_stats, self.script = story, board.sort_values("rank"), chip_stats, script
+    def __init__(self, story: Story, board: pd.DataFrame, cards: List[tuple], script: Optional[dict],
+                 season: int, week: int, featured_movement: bool = True):
+        """cards: [(label, value)] for the Why scene. featured_movement=False hides the featured player's
+        week-over-week arrow in the top-5 list (a one-off story tells its own before/after)."""
+        self.s, self.board, self.cards, self.script = story, board.sort_values("rank"), cards, script
+        self.featured_movement = featured_movement
         self.season, self.week = season, week
         self.p = story.player
         self.key = str(self.p["player_key"])
@@ -261,7 +264,7 @@ class Reel:
         moving = prev is not None and prev != cur
         if moving:
             shown = round(prev + (cur - prev) * prog(t, 1.0, 1.6))
-            caption = "LAST WEEK" if t < 1.0 else "THIS WEEK"
+            caption = self.s.labels[0] if t < 1.0 else self.s.labels[1]
         else:
             shown = cur
             caption = ("HOLDS No. 1" if prev == cur == 1 else "SAME SPOT AS LAST WEEK" if prev == cur
@@ -292,24 +295,28 @@ class Reel:
         meta = f"No. {self.s.cur_rank} · {self.p['team']} · {self.p['position']}"
         put(c, text_img(meta, "fg_demi", 40, GOLD), (nx, Y0 + 120), a)
 
-        for i, col in enumerate(self.chip_stats):
+        for i, (label, value) in enumerate(self.cards):
             ai = prog(t, 0.4 + 1.0 * i, 0.5)
             dx = int(-90 * (1 - ai))
             y = 470 + i * 170
             card = panel((MAX_W, 150), 18, (10, 10, 10, 215))
             ImageDraw.Draw(card).rounded_rectangle((0, 0, 14, 149), radius=7, fill=(*GOLD, 255))
-            lab = text_img(STAT_LABELS.get(col, col).upper(), "fg_demi", 44, GOLD)
-            val = text_img(format_stat(col, self.p.get(col)), "agency_bold", 104, WHITE)
+            val = text_img(str(value), "agency_bold", 104, WHITE)
+            lab_w = MAX_W - val.width - 124
+            lab = text_img(str(label).upper(), "fg_demi", fit_size(str(label).upper(), "fg_demi", 44, lab_w), GOLD)
             card.alpha_composite(lab, (44, (150 - lab.height) // 2))
             card.alpha_composite(val, (MAX_W - val.width - 40, (150 - val.height) // 2))
             put(c, card, (X0 + dx, y), ai)
 
-        y_cap = 470 + max(3, len(self.chip_stats)) * 170 + 150
+        y_cap = 470 + max(3, len(self.cards)) * 170 + 150
         if self.captions:
             seg = (REEL_SCENES[2][2] - REEL_SCENES[2][1] - 0.4) / len(self.captions)
             i = min(len(self.captions) - 1, max(0, int((t - 0.4) // seg)))
             ac = prog(t, 0.4 + i * seg, 0.25)
-            size, lines = wrap_fit(self.captions[i], "agency_bold", 84, MAX_W, 2, 56)
+            # one line when it fits at a readable size; a two-line break mid-phrase reads badly
+            size, lines = wrap_fit(self.captions[i], "agency_bold", 84, MAX_W, 1, 64)
+            if fit_text(ImageDraw.Draw(Image.new("RGBA", (1, 1))), self.captions[i], F("agency_bold", size), MAX_W) != self.captions[i]:
+                size, lines = wrap_fit(self.captions[i], "agency_bold", 84, MAX_W, 2, 56)
             lh = int(size * 1.15)
             for j, line in enumerate(lines):
                 put_text_c(c, CX, y_cap + j * lh, line, "agency_bold", size, WHITE, 5, ac)
@@ -350,6 +357,8 @@ class Reel:
         meta = text_img(f"{r['team']} · {r['position']}", "fg_demi", 36, (60, 60, 60) if featured else GREY)
         row.alpha_composite(meta, (tx, 98))
         mv = str(r.get("movement", ""))
+        if featured and not self.featured_movement:
+            return row
         probe = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
         mw = draw_movement(probe, 0, 0, mv, 44)
         mx = MAX_W - mw - 34
@@ -438,10 +447,10 @@ def save_frames(reel: Reel, frames_dir: Path) -> List[Path]:
     return out
 
 
-def script_text(story: Story, script: Optional[dict], season: int, week: int, chips: List[str]) -> str:
+def script_text(story: Story, script: Optional[dict], season: int, week: int, cards: List[tuple]) -> str:
     p = story.player
     prev = f"No. {story.prev_rank}" if story.prev_rank else "NEW"
-    lines = [f"NFL MVP REEL — WEEK {week}, {season}",
+    lines = [f"NFL MVP REEL — WEEK {week}, {season}" + ("" if story.labels[0] == "LAST WEEK" else f" ({story.story_type})"),
              f"Story: {story.story_type} — {story.hook}",
              f"{p['player_name']} ({p['team']} {p['position']}): {prev} -> No. {story.cur_rank}",
              f"Why this story: {story.reason}",
@@ -449,7 +458,7 @@ def script_text(story: Story, script: Optional[dict], season: int, week: int, ch
              ""]
     if not script:
         lines += ["(No narration: the script step was skipped or failed.)",
-                  f"Stat chips on screen: {', '.join(f'{STAT_LABELS.get(c, c)} {format_stat(c, p.get(c))}' for c in chips)}"]
+                  f"Stat cards on screen: {', '.join(f'{l} {v}' for l, v in cards)}"]
         return "\n".join(lines) + "\n"
     lines.append(f"SCRIPT ({script['words']} words)")
     for i, b in enumerate(script["beats"], 1):
@@ -462,11 +471,43 @@ def script_text(story: Story, script: Optional[dict], season: int, week: int, ch
     return "\n".join(lines) + "\n"
 
 
-def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_script: bool = True) -> Path:
+def _story_from_file(spec: dict, board: pd.DataFrame) -> Story:
+    """A one-off story (a correction, a feature) instead of the weekly picker. See make_reel."""
+    rows = board[board["player_name"].str.lower() == spec["player_name"].lower()]
+    if rows.empty:
+        raise SystemExit(f"{spec['player_name']} isn't on this board")
+    row = rows.iloc[0]
+    return Story(spec.get("story_type", "feature"), row, spec.get("prev_rank"), int(spec.get("cur_rank", row["rank"])),
+                 spec["hook"], spec.get("note", ""), tuple(spec.get("labels", ("LAST WEEK", "THIS WEEK"))))
+
+
+def _prepared_script(spec: dict) -> dict:
+    """A hand-written script from the story file, checked like a generated one."""
+    from src.publish.reel_script import problems, word_count
+    data = {k: spec["script"][k] for k in ("beats", "captions", "instagram_caption", "hashtags")}
+    windows = {name: (start, end) for name, start, end in REEL_SCENES}
+    for b in data["beats"]:
+        b["start"], b["end"] = windows[b["scene"]]
+    data["words"] = word_count(data)
+    data["warnings"] = problems(data)
+    for w in data["warnings"]:
+        print(f"  [WARN] Reel script: {w}")
+    return data
+
+
+def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_script: bool = True,
+              story_file: Optional[Path] = None) -> Path:
+    """The weekly reel, or with story_file a one-off. The story file (JSON) names the board player and the hook,
+    and may set story_type, prev_rank/cur_rank, labels (over the rank, before/after), note (facts for the
+    script), cards ([[label, value]] for the Why scene, instead of stat cells), script (hand-written beats,
+    captions, instagram_caption, hashtags; else one is generated) and name. A one-off writes
+    reel/reel_{name}.mp4, _script.txt and _meta.json, leaving the weekly files alone."""
     outdir = Path(outdir)
     board = pd.read_csv(outdir / "board_mvp_latest.csv", dtype={"player_id": str})
     season, week = int(board["season"].iloc[0]), int(board["through_week"].iloc[0])
-    story = pick_story(board, load_prev_ranks(outdir / ".prev_board_mvp.csv"))
+    spec = json.loads(Path(story_file).read_text(encoding="utf-8")) if story_file else None
+    story = _story_from_file(spec, board) if spec else \
+        pick_story(board, load_prev_ranks(outdir / ".prev_board_mvp.csv"))
     print(f"Reel story: {story.story_type} — {story.player['player_name']} "
           f"({'NEW' if story.prev_rank is None else f'No. {story.prev_rank}'} -> No. {story.cur_rank}). {story.reason}")
 
@@ -474,40 +515,48 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     if int(story.player["rank"]) > TOP_N:
         pool = pd.concat([pool, story.player.to_frame().T])
     chips = select_top_stats(story.player, pool, stat_cols_for(story.player), n=3)
+    cards = [tuple(c) for c in spec["cards"]] if spec and spec.get("cards") else \
+        [(STAT_LABELS.get(c, c), format_stat(c, story.player.get(c))) for c in chips]
 
-    script = generate_reel_script(story, board, chips, season, week) if write_script else None
-    reel = Reel(story, board, chips, script, season, week)
+    if spec and spec.get("script"):
+        script = _prepared_script(spec)
+    else:
+        script = generate_reel_script(story, board, chips, season, week) if write_script else None
+    reel = Reel(story, board, cards, script, season, week, featured_movement=spec is None)
     reel_dir = outdir / "reel"
     reel_dir.mkdir(parents=True, exist_ok=True)
+    stem = f"reel_{spec.get('name', story.story_type)}" if spec else "reel"
+    video_name = f"{stem}.mp4" if spec else "reel_latest.mp4"
 
-    (reel_dir / "reel_script.txt").write_text(script_text(story, script, season, week, chips), encoding="utf-8")
+    (reel_dir / f"{stem}_script.txt").write_text(script_text(story, script, season, week, cards), encoding="utf-8")
     p = story.player
     meta = {
         "sport": "nfl", "season": season, "through_week": week, "stats_through": f"Week {week}",
         "story_type": story.story_type, "hook": story.hook, "reason": story.reason,
         "player": {k: str(p[k]) for k in ("player_name", "team", "position", "player_key")},
         "prev_rank": story.prev_rank, "cur_rank": story.cur_rank,
-        "stat_chips": [{"stat": c, "label": STAT_LABELS.get(c, c), "value": format_stat(c, p.get(c))} for c in chips],
+        "stat_chips": [{"label": l, "value": v} for l, v in cards],
         "captions": (script or {}).get("captions", []),
         "instagram_caption": (script or {}).get("instagram_caption", ""),
         "hashtags": (script or {}).get("hashtags", []),
-        "script_model": REEL_MODEL if script else None,
+        "script_model": ("hand-written" if spec and spec.get("script") else REEL_MODEL) if script else None,
         "script_words": (script or {}).get("words"),
         "warnings": (script or {}).get("warnings", []),
-        "video": "reel_latest.mp4", "duration_s": DURATION,
+        "video": video_name, "duration_s": DURATION,
         # The workflow uploads the MP4 under this name to the repo's "reel-latest" release; the website's
         # social-drafts job downloads it by this name, so a failed upload can't send last week's video.
-        "release_tag": "reel-latest", "release_asset": f"nfl_reel_{season}_wk{week:02d}.mp4",
+        "release_tag": "reel-latest",
+        "release_asset": f"nfl_{stem}_{season}_wk{week:02d}.mp4" if spec else f"nfl_reel_{season}_wk{week:02d}.mp4",
         "updated_utc": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M"),
     }
-    (reel_dir / "reel_meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
-    print(f"Reel script -> {reel_dir / 'reel_script.txt'}")
+    (reel_dir / f"{stem}_meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"Reel script -> {reel_dir / f'{stem}_script.txt'}")
 
     if frames_only:
-        paths = save_frames(reel, reel_dir / "frames")
+        paths = save_frames(reel, reel_dir / ("frames" if not spec else f"frames_{stem}"))
         print(f"Reel frames -> {paths[0].parent}")
         return paths[0].parent
-    out = encode(reel, reel_dir / "reel_latest.mp4")
+    out = encode(reel, reel_dir / video_name)
     print(f"Reel -> {out} ({out.stat().st_size / 1e6:.1f} MB)")
     return out
 
@@ -519,8 +568,10 @@ def main() -> None:
     ap.add_argument("--outdir", type=Path, default=CURRENT_PRED_DIR)
     ap.add_argument("--frames-only", action="store_true", help="save one PNG per scene instead of the video")
     ap.add_argument("--no-script", action="store_true", help="skip the narration API call")
+    ap.add_argument("--story", type=Path, default=None,
+                    help="one-off reel from a story file (JSON; see make_reel) instead of the weekly picker")
     a = ap.parse_args()
-    make_reel(a.outdir, a.frames_only, not a.no_script)
+    make_reel(a.outdir, a.frames_only, not a.no_script, a.story)
 
 
 if __name__ == "__main__":

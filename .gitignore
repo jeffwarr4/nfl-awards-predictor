@@ -10,4 +10,4 @@ __pycache__/
 
 # Weekly reel: the MP4 goes to a release asset, not git; scene frames are a local check
 predictions/*/reel/*.mp4
-predictions/*/reel/frames/
+predictions/*/reel/frames*/

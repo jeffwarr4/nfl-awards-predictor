@@ -1,0 +1,33 @@
+NFL MVP REEL — WEEK 10, 2026 (correction)
+Story: correction — Our model had a bug. Here's the fix.
+Kirk Cousins (MIN QB): No. 6 -> No. 19
+Why this story: Week 10: after his trade (9 games for LV, then MIN in Week 10) Cousins was credited with Minnesota's 7-2 record and paced on its 9 games. Counted by stint he is 5-5 over 10 games. Record fix alone: No. 6 -> No. 12; games fix alone: No. 9; both: No. 19.
+Video: 27 s (25 s + 2 s hold). Post the day after the board.
+
+SCRIPT (71 words)
+
+SCENE 1 · HOOK · 0:00–0:03
+Our model had a bug this week. Here's the fix.
+
+SCENE 2 · PLAYER · 0:03–0:10
+Kirk Cousins jumped to No. 6. But he played nine games for the Raiders and just one for the Vikings.
+
+SCENE 3 · WHY · 0:10–0:18
+We were giving him Minnesota's 7-2 record. His real record is 5-5. Fixing just the record dropped him six spots.
+
+SCENE 4 · CONTEXT · 0:18–0:22
+That's the evidence. Team performance moves this model. He's No. 19 now.
+
+SCENE 5 · CTA · 0:22–0:25
+The corrected board is up. Full board at stingercollectibles.com
+
+ON-SCREEN CAPTIONS (scene 3)
+- Credited: Minnesota's 7-2
+- Actual: 5-5 across both teams
+- Record fix alone: down six
+
+INSTAGRAM CAPTION
+Our model had a bug: after his trade, Kirk Cousins was credited with Minnesota's 7-2 record for nine Raiders games. With his real 5-5 he goes from No. 6 to No. 19, and the record alone was worth six spots. Full board at stingercollectibles.com
+
+HASHTAGS
+#StingerNFL #NFLMVP #KirkCousins #Skol #NFLStats
