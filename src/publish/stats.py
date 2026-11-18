@@ -13,6 +13,20 @@ STAT_LABELS = {
     "win_pct":       "Team W%",  "games": "Games",
 }
 
+# Stats a player's stat cells may show, by position. The cells pick the stats where a player ranks highest within
+# the top 10, which is mostly QBs, so without this a WR's 29 rush yards could outrank his 1,250 total yards.
+# For a WR, total yards and total TD are effectively his receiving numbers.
+POSITION_STAT_COLS = {
+    "QB": STAT_COLS,
+    "RB": ["rush_yards", "total_yards", "total_tds", "win_pct"],
+    "WR": ["total_yards", "total_tds", "win_pct"],
+}
+
+
+def stat_cols_for(player: pd.Series) -> list:
+    return POSITION_STAT_COLS.get(str(player.get("position", "")).upper(), STAT_COLS)
+
+
 # nflreadpy team code → ESPN code, where they differ (stinger-assets logos are ESPN-named)
 ESPN_TEAM_CODES = {"LA": "LAR", "WAS": "WSH"}
 
