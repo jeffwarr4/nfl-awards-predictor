@@ -1,31 +1,31 @@
 sport,player_name,team,player_key
 NFL,Brock Purdy,SF,brock_purdy_sf
 NFL,Joe Burrow,CIN,joe_burrow_cin
-NFL,Josh Allen,BUF,josh_allen_buf
 NFL,Jahmyr Gibbs,DET,jahmyr_gibbs_det
-NFL,Trevor Lawrence,JAX,trevor_lawrence_jax
+NFL,Josh Allen,BUF,josh_allen_buf
 NFL,Patrick Mahomes,KC,patrick_mahomes_kc
 NFL,Jared Goff,DET,jared_goff_det
+NFL,Trevor Lawrence,JAX,trevor_lawrence_jax
 NFL,James Cook,BUF,james_cook_buf
 NFL,Jaxon Smith-Njigba,SEA,jaxon_smith_njigba_sea
-NFL,Kenneth Walker III,KC,kenneth_walker_iii_kc
+NFL,Dak Prescott,DAL,dak_prescott_dal
 NFL,Christian McCaffrey,SF,christian_mccaffrey_sf
 NFL,Bo Nix,DEN,bo_nix_den
+NFL,Kenneth Walker III,KC,kenneth_walker_iii_kc
 NFL,Jordan Love,GB,jordan_love_gb
-NFL,Ja'Marr Chase,CIN,jamarr_chase_cin
-NFL,Drake Maye,NE,drake_maye_ne
 NFL,Matthew Stafford,LA,matthew_stafford_la
-NFL,Dak Prescott,DAL,dak_prescott_dal
-NFL,Jaylen Warren,PIT,jaylen_warren_pit
-NFL,Kirk Cousins,MIN,kirk_cousins_min
-NFL,Amon-Ra St. Brown,DET,amon_ra_st_brown_det
-NFL,Caleb Williams,CHI,caleb_williams_chi
-NFL,Tee Higgins,CIN,tee_higgins_cin
-NFL,Bhayshul Tuten,JAX,bhayshul_tuten_jax
-NFL,Deshaun Watson,CLE,deshaun_watson_cle
+NFL,Drake Maye,NE,drake_maye_ne
 NFL,C.J. Stroud,HOU,cj_stroud_hou
+NFL,Caleb Williams,CHI,caleb_williams_chi
+NFL,Amon-Ra St. Brown,DET,amon_ra_st_brown_det
+NFL,Ja'Marr Chase,CIN,jamarr_chase_cin
+NFL,Kirk Cousins,MIN,kirk_cousins_min
+NFL,Deshaun Watson,CLE,deshaun_watson_cle
+NFL,CeeDee Lamb,DAL,ceedee_lamb_dal
+NFL,Jaylen Warren,PIT,jaylen_warren_pit
+NFL,Tee Higgins,CIN,tee_higgins_cin
 NFL,Christian Watson,GB,christian_watson_gb
-NFL,Bijan Robinson,ATL,bijan_robinson_atl
-NFL,Luther Burden III,CHI,luther_burden_iii_chi
+NFL,Chuba Hubbard,CAR,chuba_hubbard_car
 NFL,D'Andre Swift,CHI,dandre_swift_chi
-NFL,Parker Washington,JAX,parker_washington_jax
+NFL,Bijan Robinson,ATL,bijan_robinson_atl
+NFL,Bryce Young,CAR,bryce_young_car

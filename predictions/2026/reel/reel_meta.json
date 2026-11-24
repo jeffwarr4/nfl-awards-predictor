@@ -1,56 +1,53 @@
 {
   "sport": "nfl",
   "season": 2026,
-  "through_week": 10,
-  "stats_through": "Week 10",
-  "story_type": "new_no1",
-  "hook": "There's a new No. 1 in our MVP model",
-  "reason": "Brock Purdy took over No. 1 (was No. 2 last week)",
+  "through_week": 11,
+  "stats_through": "Week 11",
+  "story_type": "bubble_breakthrough",
+  "hook": "From No. 17 to No. 10: into the top 10",
+  "reason": "Dak Prescott moved from No. 17 into the top 10",
   "player": {
-    "player_name": "Brock Purdy",
-    "team": "SF",
+    "player_name": "Dak Prescott",
+    "team": "DAL",
     "position": "QB",
-    "player_key": "brock_purdy_sf"
+    "player_key": "dak_prescott_dal"
   },
-  "prev_rank": 2,
-  "cur_rank": 1,
+  "prev_rank": 17,
+  "cur_rank": 10,
+  "season_ranks": "Week 6: not on the board, Week 7: No. 13, Week 8: No. 17, Week 9: No. 15, Week 10: No. 17",
   "stat_chips": [
     {
-      "stat": "total_yards",
-      "label": "Total Yds",
-      "value": "2,591"
-    },
-    {
-      "stat": "total_tds",
       "label": "Total TD",
-      "value": "22"
+      "value": "27"
     },
     {
-      "stat": "win_pct",
-      "label": "Team W%",
-      "value": ".889"
+      "label": "Total Yds",
+      "value": "3,167"
+    },
+    {
+      "label": "Pass YPG",
+      "value": "277.2"
     }
   ],
   "captions": [
-    "2,591 total yards",
-    "22 total touchdowns",
-    "115.2 passer rating",
-    "4.0 TD:INT ratio"
+    "27 total touchdowns",
+    "Over 3,000 total yards",
+    "277.2 passing yards per game"
   ],
-  "instagram_caption": "Brock Purdy is the new No. 1 in our MVP model after Week 10, up from No. 2 with a 115.2 rating and 22 total touchdowns for the 8-1 49ers. Full board at stingercollectibles.com",
+  "instagram_caption": "Dak Prescott jumped from No. 17 to No. 10 on our MVP board this week, with 27 total touchdowns and 3,167 total yards. Full board at stingercollectibles.com",
   "hashtags": [
     "#StingerNFL",
+    "#DakPrescott",
     "#NFLMVP",
-    "#BrockPurdy",
-    "#FTTB",
-    "#NFLWeek10"
+    "#DallasCowboys",
+    "#NFLWeek11"
   ],
   "script_model": "claude-opus-5-5",
-  "script_words": 69,
+  "script_words": 70,
   "warnings": [],
   "video": "reel_latest.mp4",
   "duration_s": 27,
   "release_tag": "reel-latest",
-  "release_asset": "nfl_reel_2026_wk10.mp4",
-  "updated_utc": "2026-11-18 02:58"
+  "release_asset": "nfl_reel_2026_wk11.mp4",
+  "updated_utc": "2026-11-24 15:19"
 }
