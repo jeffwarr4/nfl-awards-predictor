@@ -13,6 +13,27 @@ STAT_LABELS = {
     "win_pct":       "Team W%",  "games": "Games",
 }
 
+# The reel spells some labels out: they're read aloud and sit on a big card ("TD to INT ratio", not "TD:INT").
+# total_ypg / rush_ypg are per-game values derived by per_game() for the reel's then-vs-now comparison.
+REEL_LABELS = {**STAT_LABELS, "passer_rating": "Passer rating", "td_int": "TD to INT ratio",
+               "total_ypg": "Yds / game", "rush_ypg": "Rush yds / game"}
+
+# The reel's then-vs-now compares rates, not season totals (totals only ever go up): by position.
+RATE_COLS = {"QB": ["passer_rating", "td_int", "pass_ypg"], "RB": ["total_ypg", "rush_ypg"], "WR": ["total_ypg"]}
+
+
+def per_game(row: pd.Series) -> pd.Series:
+    """row plus total_ypg and rush_ypg (season totals / games), for comparing two weekly boards."""
+    row = row.copy()
+    try:
+        g = float(row["games"])
+        row["total_ypg"] = round(float(row["total_yards"]) / g, 1) if g else None
+        row["rush_ypg"] = round(float(row["rush_yards"]) / g, 1) if g else None
+    except (KeyError, TypeError, ValueError):
+        pass
+    return row
+
+
 # Stats a player's stat cells may show, by position. The cells pick the stats where a player ranks highest within
 # the top 10, which is mostly QBs, so without this a WR's 29 rush yards could outrank his 1,250 total yards.
 # For a WR, total yards and total TD are effectively his receiving numbers.

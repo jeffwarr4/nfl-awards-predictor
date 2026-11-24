@@ -4,7 +4,7 @@
   "through_week": 11,
   "stats_through": "Week 11",
   "story_type": "bubble_breakthrough",
-  "hook": "From No. 17 to No. 10: into the top 10",
+  "hook": "Into the top 10",
   "reason": "Dak Prescott moved from No. 17 into the top 10",
   "player": {
     "player_name": "Dak Prescott",
@@ -17,37 +17,35 @@
   "season_ranks": "Week 6: not on the board, Week 7: No. 13, Week 8: No. 17, Week 9: No. 15, Week 10: No. 17",
   "stat_chips": [
     {
-      "label": "Total TD",
-      "value": "27"
+      "label": "DAL record",
+      "value": "3-5 → 5-6"
     },
     {
-      "label": "Total Yds",
-      "value": "3,167"
+      "label": "TD to INT ratio",
+      "value": "2.8 → 4.2"
     },
     {
-      "label": "Pass YPG",
-      "value": "277.2"
+      "label": "Passer rating",
+      "value": "93.2 → 101.0"
     }
   ],
-  "captions": [
-    "27 total touchdowns",
-    "Over 3,000 total yards",
-    "277.2 passing yards per game"
-  ],
-  "instagram_caption": "Dak Prescott jumped from No. 17 to No. 10 on our MVP board this week, with 27 total touchdowns and 3,167 total yards. Full board at stingercollectibles.com",
+  "compare_week": 8,
+  "question": "Can Dak climb into the top 5?",
+  "captions": [],
+  "instagram_caption": "Can Dak climb into the top 5? Dak Prescott jumped from No. 17 to No. 10 this week. Full board at stingercollectibles.com",
   "hashtags": [
     "#StingerNFL",
     "#DakPrescott",
     "#NFLMVP",
     "#DallasCowboys",
-    "#NFLWeek11"
+    "#MVPRace"
   ],
   "script_model": "claude-opus-5-5",
-  "script_words": 70,
+  "script_words": 48,
   "warnings": [],
   "video": "reel_latest.mp4",
-  "duration_s": 27,
+  "duration_s": 21,
   "release_tag": "reel-latest",
   "release_asset": "nfl_reel_2026_wk11.mp4",
-  "updated_utc": "2026-11-24 15:19"
+  "updated_utc": "2026-11-24 17:07"
 }

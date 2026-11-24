@@ -102,25 +102,54 @@ while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` brid
 
 **Legacy.** `outputs/` and `docs/outputs/` (GitHub Pages copies of the 2025 Canva CSVs) are no longer written.
 
-**Weekly reel (`src/publish/render_reel.py`).** One story per week as a silent 1080×1920 MP4 (25 s + 2 s
-hold) plus a narration script Jeff records over it in CapCut; posted the day after the board. `reel_story.pick_story`
-(pure; `tests/test_reel_story.py`, run `python -m pytest tests/`) takes the first match: new #1, biggest climber into
-the top 5, 11+ into the top 10, biggest drop by a former top-5 player, else a profile of #1 (always on the first board,
-when everyone is NEW). A No. 1 who held the spot on an earlier weekly board (`board_mvp_wkNN.csv`) is "back at No. 1",
-not new; the script also gets the featured player's rank on each earlier weekly board (`load_history`, `rank_history`).
-Weeks 6–9 of 2026 were backfilled from git (each week's last board; Week 6 is the 10-row top 10, from before the
-30-deep board). `reel_script.py` writes five timed beats in Jeff's first-person voice on `REEL_MODEL`
-(Opus 5.5, with the API's refusal fallback; chips stay on Haiku) and checks the word count, the closing line, and that
-no %/odds/betting language slipped in. Scene timings, safe zones and thresholds are `REEL_*` in `config.py`. Frames are
-Pillow, encoded by imageio-ffmpeg's bundled ffmpeg (no system ffmpeg). Outputs in `predictions/{year}/reel/`:
-`reel_script.txt` and `reel_meta.json` are committed; `reel_latest.mp4` is gitignored and goes to the repo's
-`reel-latest` release as `nfl_reel_{year}_wk{NN}.mp4` (`release_asset` in the meta). stinger-website's social-drafts
-job emails it from there. `--frames-only` saves one PNG per scene with the platform UI zones shaded, for layout checks.
-A replay folder needs the previous week replayed into it first, or everyone is NEW and the fallback is picked.
-One-off reels (a correction, a feature): `render_reel --story predictions/{year}/reel/story_<name>.json` names the
-board player and the hook, and can set before/after labels, the Why cards, a note for the script, and a hand-written
-script (checked like a generated one). It writes `reel_<name>.*` beside the weekly files without touching them; upload
-the MP4 to the release by hand (the next weekly upload removes it). Example: `story_cousins_correction.json`.
+**Weekly reel (`src/publish/render_reel.py`).** One story per week as a silent 1080×1920 MP4 (20 s + 1 s hold)
+plus a narration script Jeff voices over in Instagram (he adds the Captions sticker there; nothing is burned in);
+posted the day after the board. Reworked Nov 2026 for retention, matching nba-awards-predictor: the first reels lost
+viewers in the hook (NHL: ~6 of 27 s watched), so there are four scenes, `REEL_SCENES` hook 0–3 / proof 3–13 /
+context 13–16 / ask 16–20. Frame 0 already shows the hook text, headshot, name and last week's rank (no fade-ins),
+and the rank flips to this week's by 0.8 s. The reel ends on a comment question, not a spoken URL (the URL is small
+on screen and ends the Instagram caption).
+- `reel_story.pick_story` (pure; `tests/test_reel_story.py`, run `python -m pytest tests/`) takes the first match:
+  new No. 1, biggest climber into the top 5, 11+ into the top 10, biggest drop by a former top-5 player, else a
+  profile of No. 1 (always on the first board, when everyone is NEW). Players are matched by `player_id`. A No. 1
+  who held the spot on an earlier weekly board (`board_mvp_wkNN.csv`) is "back on top", not new; the script also gets
+  the featured player's rank on each earlier weekly board (`load_history`, `rank_history`). Weeks 6–9 of 2026 were
+  backfilled from git (each week's last board; Week 6 is the 10-row top 10, from before the 30-deep board). Hooks are
+  short and lead with the number; for a climb, `season_lows` makes the hook his path when it's bigger than last
+  week's move and at least 2 weeks back ("No. 30 → No. 3 in 3 weeks"; `hook_line_img` draws the "→").
+- `reel_script.py` writes four timed beats in Jeff's first-person voice on `REEL_MODEL` (Opus 5.5, with the API's
+  refusal fallback; chips stay on Haiku), plus the on-screen `question`, the Instagram caption and 5 hashtags.
+  Records are W-L by stint (`generate_chips._record`). The script explains the move rather than reciting stats: it
+  gets a then-vs-now comparison (`comparison_row`: his row on the path hook's week, else the earliest weekly board
+  within `REEL_LOOKBACK_WEEKS`; `then_now_lines`: rank, team record and the record since then (left out for a
+  player traded since), his rates (`stats.RATE_COLS`: rating, TD to INT ratio, pass YPG for QBs; yards per game for
+  RBs/WRs) and the touchdowns and yards since then) plus `MODEL_NOTE`, a plain-words summary of what the model
+  weighs (`models/coefficients_vote_share.csv`). It says "TD to INT ratio", never "TD:INT". `problems()` checks
+  `REEL_WORDS`, the hook (≤ `REEL_HOOK_MAX_WORDS`, no "our model"), the proof (≤ `REEL_PROOF_MAX_WORDS`), that the
+  last beat (≤ `REEL_ASK_MAX_WORDS`) ends with "?", no filler or spoken link, no odds/betting language or percent
+  (a completion % is allowed, win % never: `probability_language`), and that the caption ends with "Full board at
+  stingercollectibles.com".
+  One rewrite request; then `finish()` swaps in `fallback_question()` (last name, suffix dropped: "Is Mahomes your
+  MVP right now?"). Tests: `tests/test_reel_script.py`.
+- The Proof scene: with a comparison, a "WEEK 8 → WEEK 11" label and 3 then → now cards (`then_now_cards`: the
+  team record unless he was traded, then the position's rates that moved most, by relative change; the NFL model's
+  passing terms overlap, so cards aren't ranked by model weight as the NBA reel's are). Without one (no earlier
+  board), 3 position-aware stat cards (`stat_cols_for` + `select_top_stats`, win % left out), the team record and
+  the board's `why_blurb`. Labels come from `stats.REEL_LABELS`. Scene timings, safe
+  zones and thresholds are `REEL_*` in `config.py`. Frames are Pillow, encoded by imageio-ffmpeg's bundled ffmpeg
+  (no system ffmpeg). Needs anthropic 2.x (`fallbacks`).
+- Outputs in `predictions/{year}/reel/`: `reel_script.txt` and `reel_meta.json` are committed (the meta keeps the
+  keys stinger-website reads and adds `question`); `reel_latest.mp4` is gitignored and goes to the repo's
+  `reel-latest` release as `nfl_reel_{year}_wk{NN}.mp4` (`release_asset` in the meta). stinger-website's
+  social-drafts job emails it from there. `--frames-only` saves frame 0 and the end of each scene, with the platform
+  UI zones shaded, for layout checks. A replay folder needs the previous week replayed into it first, or everyone is
+  NEW and the fallback is picked.
+- One-off reels (a correction, a feature): `render_reel --story predictions/{year}/reel/story_<name>.json` names the
+  board player and the hook, and can set before/after labels, the Proof cards, a note for the script, and a
+  hand-written script (four beats, `question`, caption, hashtags; checked like a generated one). It writes
+  `reel_<name>.*` beside the weekly files without touching them; upload the MP4 to the release by hand (the next
+  weekly upload removes it). The 2026 story files (`story_cousins_correction.json`, `story_purdy_back.json`) use the
+  old five-beat script and are history; rewrite one before rendering it again.
 
 **Weekly and final boards (`scripts/snapshot_board.py`, the same file in all four awards repos).** The
 workflow's "Keep this week's board" step, just before the commit, copies `board_mvp_latest.csv` to `board_mvp_wkNN.csv` (NN = `through_week`), which is never
