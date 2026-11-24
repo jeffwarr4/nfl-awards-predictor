@@ -1,6 +1,7 @@
 """
 Weekly NFL MVP reel: one story from the board as a silent 1080×1920 MP4 (20 s + a 1 s hold) and a narration
-script Jeff voices over in Instagram. Posted the day after the static board.
+script Jeff voices over in Instagram. Posted first, the afternoon the board completes; the static board
+posts the next day (order reversed 2026-11-24).
 
 Reworked Nov 2026 for retention: four scenes (hook, proof, context, ask). Frame 0 already shows the hook, the
 player and his rank (no fade-in), and the reel ends on a comment question instead of a spoken URL.
@@ -555,7 +556,7 @@ def script_text(story: Story, script: Optional[dict], season: int, week: int, ca
              f"Story: {story.story_type} — {story.hook}",
              f"{p['player_name']} ({p['team']} {p['position']}): {prev} -> No. {story.cur_rank}",
              f"Why this story: {story.reason}",
-             f"Video: {DURATION} s ({REEL_SCENES[-1][2]} s + {REEL_HOLD_S} s hold). Post the day after the board.",
+             f"Video: {DURATION} s ({REEL_SCENES[-1][2]} s + {REEL_HOLD_S} s hold). Post this first; the board posts the next day.",
              "Record over the video in Instagram; add the Captions sticker (most people watch muted).",
              ""]
     if not script:
@@ -593,7 +594,8 @@ def _prepared_script(spec: dict, story: Story) -> dict:
 
 def then_now_cards(p: pd.Series, then: pd.Series) -> List[tuple]:
     """Proof cards as then → now: the team's record (skipped for a player traded since then), then the rate stats
-    for his position that moved most since then (relative change). Rates, not season totals, which only go up.
+    for his position that moved most since then (relative change, the ones that
+    went the same way as his rank first). Rates, not season totals, which only go up.
     The NFL model is a logistic regression on pace-projected totals whose passing terms overlap (TD:INT carries a
     negative weight), so unlike the NBA reel the cards aren't ranked by model weight."""
     p, then = per_game(p), per_game(then)
@@ -603,9 +605,12 @@ def then_now_cards(p: pd.Series, then: pd.Series) -> List[tuple]:
     cols = [c for c in RATE_COLS.get(str(p.get("position", "")).upper(), RATE_COLS["QB"])
             if c in then and c in p and pd.notna(then[c]) and pd.notna(p[c])]
 
+    up = int(p["rank"]) <= int(then["rank"])           # a climb (or a hold): show the rates that improved first
+
     def moved(c):
         a, b = float(then[c]), float(p[c])
-        return abs(b - a) / max(abs(a), 1e-9)
+        better = (b < a) if c == "gaa" else (b > a)
+        return (better == up, abs(b - a) / max(abs(a), 1e-9))
 
     for c in sorted(cols, key=moved, reverse=True)[: 3 - len(cards)]:
         cards.append((REEL_LABELS.get(c, c), f"{format_stat(c, then[c])} {ARROW_WORD} {format_stat(c, p[c])}"))
@@ -643,7 +648,8 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     # Then vs now: his row on an earlier weekly board (the path hook's week, else up to REEL_LOOKBACK_WEEKS back)
     low = season_lows(history, week).get(str(story.player["player_id"]))
     prefer = week - low[1] if low and ARROW_WORD in story.hook else None
-    then = None if spec else comparison_row(history, str(story.player["player_id"]), week, prefer_week=prefer)
+    then = None if spec else comparison_row(history, str(story.player["player_id"]), week, prefer_week=prefer,
+                                                     prev_rank=story.prev_rank, cur_rank=story.cur_rank)
     if spec and spec.get("cards"):
         cards = [tuple(c) for c in spec["cards"]]
     elif then is not None:

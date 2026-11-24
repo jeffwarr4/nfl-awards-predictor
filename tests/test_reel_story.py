@@ -129,3 +129,13 @@ def test_comparison_row():
     assert int(comparison_row(h, "b", 5)["week"]) == 2
     assert comparison_row(h, "c", 5) is None
     assert comparison_row(pd.DataFrame(), "a", 5) is None
+
+
+def test_comparison_row_covers_the_hooks_move():
+    from src.publish.reel_story import comparison_row
+    # 2027 NHL Week 8: Kaprizov No. 7, 5, 15, then 3. "No. 15 -> No. 3" is compared with Week 7, not Week 5.
+    h = pd.DataFrame({"week": [5, 6, 7], "player_id": ["k", "k", "k"], "rank": [7, 5, 15]})
+    assert int(comparison_row(h, "k", 8, prev_rank=15, cur_rank=3)["week"]) == 7
+    # a drop (No. 2 -> No. 9): the earliest board where he was No. 2 or better
+    h = pd.DataFrame({"week": [5, 6, 7], "player_id": ["k", "k", "k"], "rank": [4, 1, 2]})
+    assert int(comparison_row(h, "k", 8, prev_rank=2, cur_rank=9)["week"]) == 6

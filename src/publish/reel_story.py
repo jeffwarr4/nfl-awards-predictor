@@ -112,17 +112,22 @@ def season_lows(history: pd.DataFrame, week: int) -> Dict[str, Tuple[int, int]]:
 
 
 def comparison_row(history: pd.DataFrame, player_id: str, week: int, lookback: int = REEL_LOOKBACK_WEEKS,
-                   prefer_week: Optional[int] = None) -> Optional[pd.Series]:
+                   prefer_week: Optional[int] = None, prev_rank: Optional[int] = None,
+                   cur_rank: Optional[int] = None) -> Optional[pd.Series]:
     """His row on an earlier weekly board to compare with this week ("then vs now"), or None.
     prefer_week (the week of a path hook, "No. 30 → No. 3 in 3 weeks") wins when he's on that board; otherwise
-    the earliest board he's on within `lookback` weeks. The comparison explains the move: what changed, his
-    numbers or his team's."""
+    the earliest board he's on within `lookback` weeks where he was at least as far from this week's rank as he
+    was last week (prev_rank -> cur_rank), so the window covers the whole move the hook names. (2027 NHL Week 8:
+    Kaprizov was No. 7, 5, 15, then 3; comparing with Week 5, when he was No. 7, explained a different move than
+    the hook's "No. 15 -> No. 3".) The comparison explains the move: what changed, his numbers or his team's."""
     if history.empty:
         return None
     mine = history[history["player_id"].astype(str) == str(player_id)]
     if prefer_week is not None and (mine["week"] == prefer_week).any():
         return mine[mine["week"] == prefer_week].iloc[0]
     recent = mine[mine["week"] >= week - lookback].sort_values("week")
+    if prev_rank and cur_rank and prev_rank != cur_rank:
+        recent = recent[recent["rank"] >= prev_rank] if cur_rank < prev_rank else recent[recent["rank"] <= prev_rank]
     return None if recent.empty else recent.iloc[0]
 
 

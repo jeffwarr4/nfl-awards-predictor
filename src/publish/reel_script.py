@@ -44,7 +44,7 @@ QUESTION_MAX_WORDS = 10
 STAT_PCT = re.compile(
     r"\d+(?:\.\d+)?\s*(?:%|percent)\s+(?:from (?:the field|the floor|three|deep|downtown|the line|beyond the arc)"
     r"|on (?:threes|3s|free throws|his shots|his passes)|shooting|of his (?:passes|shots|throws|attempts)"
-    r"|completion|completions|save|strikeouts?|K\b)"
+    r"|(?:completion|save)s?(?:\s+(?:percentage|rate))?|strikeouts?|K\b)"
     r"|\b(?:shooting|shoots|shot|hitting|hits|making|completing|completes|completed|converting)\s+(?:a |at |just |over |under |nearly |about )?"
     r"\d+(?:\.\d+)?\s*(?:%|percent)"
     r"|\b(?:field[- ]goal|three[- ]point|3-point|free[- ]throw|completion|shooting|save|strikeout|FG|3P|3PT|FT|Comp|K|SV)\s*"

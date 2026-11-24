@@ -104,7 +104,8 @@ while schedules keep `OAK`/`STL`/`SD`; `fetch_player_stats.RELOCATED_TEAMS` brid
 
 **Weekly reel (`src/publish/render_reel.py`).** One story per week as a silent 1080×1920 MP4 (20 s + 1 s hold)
 plus a narration script Jeff voices over in Instagram (he adds the Captions sticker there; nothing is burned in);
-posted the day after the board. Reworked Nov 2026 for retention, matching nba-awards-predictor: the first reels lost
+posted first, the afternoon the board completes, with the static board the next day (order reversed
+2026-11-24). Reworked Nov 2026 for retention, matching nba-awards-predictor: the first reels lost
 viewers in the hook (NHL: ~6 of 27 s watched), so there are four scenes, `REEL_SCENES` hook 0–3 / proof 3–13 /
 context 13–16 / ask 16–20. Frame 0 already shows the hook text, headshot, name and last week's rank (no fade-ins),
 and the rank flips to this week's by 0.8 s. The reel ends on a comment question, not a spoken URL (the URL is small
