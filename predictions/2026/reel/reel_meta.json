@@ -30,9 +30,24 @@
     }
   ],
   "compare_week": 8,
-  "question": "Can Dak climb into the top 5?",
+  "question": "Can Dak Prescott crack the top 5?",
+  "script_frame": {
+    "window": "the last three weeks (Week 8 to Week 11), his last three games",
+    "start_rank": 17,
+    "driver": "player",
+    "opener": "So what changed?",
+    "crossed": [
+      "Bo Nix",
+      "Kirk Cousins",
+      "Caleb Williams"
+    ],
+    "milestone": "top 5",
+    "milestone_player": "Patrick Mahomes"
+  },
+  "first_draft_problems": [],
+  "rewritten": false,
   "captions": [],
-  "instagram_caption": "Can Dak climb into the top 5? Dak Prescott jumped from No. 17 to No. 10 this week. Full board at stingercollectibles.com",
+  "instagram_caption": "Can Dak Prescott crack the top 5? He went from No. 17 to No. 10 on our NFL MVP board in three weeks. Full board at stingercollectibles.com.",
   "hashtags": [
     "#StingerNFL",
     "#DakPrescott",
@@ -41,11 +56,11 @@
     "#MVPRace"
   ],
   "script_model": "claude-opus-5-5",
-  "script_words": 48,
+  "script_words": 46,
   "warnings": [],
   "video": "reel_latest.mp4",
   "duration_s": 21,
   "release_tag": "reel-latest",
   "release_asset": "nfl_reel_2026_wk11.mp4",
-  "updated_utc": "2026-11-24 17:07"
+  "updated_utc": "2026-11-24 22:56"
 }
