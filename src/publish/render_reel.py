@@ -311,7 +311,7 @@ class Reel:
         self.season, self.week = season, week
         self.p = story.player
         self.key = str(self.p["player_key"])
-        self.question = ((script or {}).get("question") or fallback_question(story)).strip()
+        self.question = ((script or {}).get("question") or fallback_question(story, board)).strip()
         self.then_week = None                # set by make_reel when the cards are then → now
         self.scenes = [(name, start, end, getattr(self, f"scene_{name}")) for name, start, end in REEL_SCENES]
 
@@ -549,7 +549,8 @@ def save_frames(reel: Reel, frames_dir: Path) -> List[Path]:
     return out
 
 
-def script_text(story: Story, script: Optional[dict], season: int, week: int, cards: List[tuple]) -> str:
+def script_text(story: Story, script: Optional[dict], season: int, week: int, cards: List[tuple],
+                board: Optional[pd.DataFrame] = None) -> str:
     p = story.player
     prev = f"No. {story.prev_rank}" if story.prev_rank else "NEW"
     lines = [f"NFL MVP REEL — WEEK {week}, {season}" + ("" if story.labels[0] == "LAST WEEK" else f" ({story.story_type})"),
@@ -562,14 +563,22 @@ def script_text(story: Story, script: Optional[dict], season: int, week: int, ca
     if not script:
         lines += ["(No narration: the script step was skipped or failed.)",
                   f"Stat cards on screen: {', '.join(f'{l} {v}' for l, v in cards)}",
-                  f"Question on screen: {fallback_question(story)}"]
+                  f"Question on screen: {fallback_question(story, board)}"]
         return "\n".join(lines) + "\n"
+    f = script.get("frame")
+    if f:
+        lines += [f"Story frame: {f['window']}; driver: {f['driver']}; milestone: {f['milestone']}"
+                  + (f" ({f['milestone_player']})" if f.get("milestone_player") else ""), ""]
     lines.append(f"SCRIPT ({script['words']} words)")
     for i, b in enumerate(script["beats"], 1):
         lines += ["", f"SCENE {i} · {b['scene'].upper()} · 0:{b['start']:02d}–0:{b['end']:02d}", b["text"]]
     lines += ["", "QUESTION ON SCREEN", script["question"],
               "", "INSTAGRAM CAPTION", script["instagram_caption"],
               "", "HASHTAGS", " ".join(script["hashtags"])]
+    if "rewritten" in script:
+        first = script.get("first_draft_problems") or []
+        lines += ["", "CHECKS", f"First draft: {'; '.join(first) if first else 'passed'}"
+                  + (" (rewritten)" if script["rewritten"] else "")]
     if script.get("warnings"):
         lines += ["", "CHECK BEFORE RECORDING", *[f"- {w}" for w in script["warnings"]]]
     return "\n".join(lines) + "\n"
@@ -585,11 +594,11 @@ def _story_from_file(spec: dict, board: pd.DataFrame) -> Story:
                  spec["hook"], spec.get("note", ""), tuple(spec.get("labels", ("LAST WEEK", "THIS WEEK"))))
 
 
-def _prepared_script(spec: dict, story: Story) -> dict:
+def _prepared_script(spec: dict, story: Story, board: Optional[pd.DataFrame] = None) -> dict:
     """A hand-written script from the story file (beats for REEL_SCENES, question, instagram_caption,
     hashtags), checked and finished like a generated one."""
     data = {k: spec["script"].get(k, "" if k != "hashtags" else []) for k in ("beats", "question", "instagram_caption", "hashtags")}
-    return finish(data, story)
+    return finish(data, story, board)
 
 
 def then_now_cards(p: pd.Series, then: pd.Series) -> List[tuple]:
@@ -621,7 +630,7 @@ def then_now_cards(p: pd.Series, then: pd.Series) -> List[tuple]:
 
 
 def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_script: bool = True,
-              story_file: Optional[Path] = None) -> Path:
+              story_file: Optional[Path] = None, script_only: bool = False) -> Path:
     """The weekly reel, or with story_file a one-off. The story file (JSON) names the board player and the hook,
     and may set story_type, prev_rank/cur_rank, labels (over the rank, before/after), note (facts for the
     script), cards ([[label, value]] for the Proof scene, instead of stat cells), script (hand-written beats for
@@ -648,8 +657,9 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     # Then vs now: his row on an earlier weekly board (the path hook's week, else up to REEL_LOOKBACK_WEEKS back)
     low = season_lows(history, week).get(str(story.player["player_id"]))
     prefer = week - low[1] if low and ARROW_WORD in story.hook else None
-    then = None if spec else comparison_row(history, str(story.player["player_id"]), week, prefer_week=prefer,
-                                                     prev_rank=story.prev_rank, cur_rank=story.cur_rank)
+    then = None if spec and spec.get("cards") else comparison_row(      # a one-off with its own cards tells its own before/after
+        history, str(story.player["player_id"]), week, prefer_week=prefer,
+        prev_rank=story.prev_rank, cur_rank=story.cur_rank)
     if spec and spec.get("cards"):
         cards = [tuple(c) for c in spec["cards"]]
     elif then is not None:
@@ -658,9 +668,10 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
         cards = [(REEL_LABELS.get(c, c), format_stat(c, story.player.get(c))) for c in chips]
 
     if spec and spec.get("script"):
-        script = _prepared_script(spec, story)
+        script = _prepared_script(spec, story, board)
     else:
-        script = generate_reel_script(story, board, cards, season, week, path, then) if write_script else None
+        earlier = None if then is None else history[history["week"] == int(then["week"])]
+        script = generate_reel_script(story, board, cards, season, week, path, then, earlier) if write_script else None
     reel = Reel(story, board, cards, script, season, week, featured_movement=spec is None)
     reel.then_week = None if then is None else int(then["week"])
     reel_dir = outdir / "reel"
@@ -668,7 +679,7 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     stem = f"reel_{spec.get('name', story.story_type)}" if spec else "reel"
     video_name = f"{stem}.mp4" if spec else "reel_latest.mp4"
 
-    (reel_dir / f"{stem}_script.txt").write_text(script_text(story, script, season, week, cards), encoding="utf-8")
+    (reel_dir / f"{stem}_script.txt").write_text(script_text(story, script, season, week, cards, board), encoding="utf-8")
     p = story.player
     meta = {
         "sport": "nfl", "season": season, "through_week": week, "stats_through": f"Week {week}",
@@ -677,7 +688,10 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
         "prev_rank": story.prev_rank, "cur_rank": story.cur_rank, "season_ranks": path,
         "stat_chips": [{"label": l, "value": v} for l, v in cards],
         "compare_week": None if then is None else int(then["week"]),
-        "question": (script or {}).get("question") or fallback_question(story),
+        "question": (script or {}).get("question") or fallback_question(story, board),
+        "script_frame": (script or {}).get("frame"),
+        "first_draft_problems": (script or {}).get("first_draft_problems"),
+        "rewritten": (script or {}).get("rewritten"),
         "captions": [],                       # retired with the Nov 2026 rework (no on-screen caption chunks)
         "instagram_caption": (script or {}).get("instagram_caption", ""),
         "hashtags": (script or {}).get("hashtags", []),
@@ -693,6 +707,8 @@ def make_reel(outdir: Path = CURRENT_PRED_DIR, frames_only: bool = False, write_
     }
     (reel_dir / f"{stem}_meta.json").write_text(json.dumps(meta, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"Reel script -> {reel_dir / f'{stem}_script.txt'}")
+    if script_only:                       # script and meta only, for reviewing scripts (no frames, no MP4)
+        return reel_dir / f"{stem}_script.txt"
 
     if frames_only:
         paths = save_frames(reel, reel_dir / ("frames" if not spec else f"frames_{stem}"))
@@ -710,10 +726,11 @@ def main() -> None:
     ap.add_argument("--outdir", type=Path, default=CURRENT_PRED_DIR)
     ap.add_argument("--frames-only", action="store_true", help="save one PNG per scene instead of the video")
     ap.add_argument("--no-script", action="store_true", help="skip the narration API call")
+    ap.add_argument("--script-only", action="store_true", help="write the script and meta only (no frames, no video)")
     ap.add_argument("--story", type=Path, default=None,
                     help="one-off reel from a story file (JSON; see make_reel) instead of the weekly picker")
     a = ap.parse_args()
-    make_reel(a.outdir, a.frames_only, not a.no_script, a.story)
+    make_reel(a.outdir, a.frames_only, not a.no_script, a.story, a.script_only)
 
 
 if __name__ == "__main__":
