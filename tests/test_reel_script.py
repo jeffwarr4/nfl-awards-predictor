@@ -28,7 +28,7 @@ def story(kind="bubble_breakthrough", name="Dak Prescott", prev=17):
 # Example 2 from the prompt (a production-driven climb), as edited to pass the checks
 GOOD = {
     "beats": [
-        {"scene": "hook", "text": "Dak Prescott: No. 17 to No. 10 in three weeks."},
+        {"scene": "hook", "text": "Dak Prescott jumped from 17 to 10 in three weeks."},
         {"scene": "proof", "text": "So what changed? His last three games: twelve touchdowns, two Dallas wins, and "
                                    "his season rating up from 93 to 101."},
         {"scene": "context", "text": "Five spots from our top five, and Mahomes is the one to catch."},
@@ -70,7 +70,7 @@ def test_example_2_passes():
 
 def test_example_1_passes():
     ex1 = {"beats": [
-        {"scene": "hook", "text": "Patrick Mahomes: No. 30 to No. 5 in three weeks."},
+        {"scene": "hook", "text": "Patrick Mahomes jumped from 30 to 5 in three weeks."},
         {"scene": "proof", "text": "His numbers barely moved: twenty-eight points and nearly thirteen boards a night. "
                                    "So what changed? Kansas City, 1-4 three weeks ago, has gone 8-2 since."},
         {"scene": "context", "text": "Two spots from our top three, Gibbs next."},
@@ -89,7 +89,7 @@ def test_week11_v2_fails_the_new_checks():
 
 def test_suffix_is_optional_in_the_full_name():
     s = story("top5_climber", "Patrick Mahomes II", prev=9)
-    d = script(hook="Patrick Mahomes: No. 9 to No. 5 in three weeks.", context="Two spots from our top three.",
+    d = script(hook="Patrick Mahomes jumped from 9 to 5 in three weeks.", context="Two spots from our top three.",
                ask="Can Mahomes crack the top 3?")
     d["question"] = "Can Mahomes crack the top 3?"
     assert check(d, s, {9, 5}) == []
@@ -253,3 +253,12 @@ def test_finish_rewrites_the_caption_ending():
     d["instagram_caption"] = d["question"] + " Up seven spots: Full board at stingercollectibles.com"
     out = finish(d, story(), BOARD, {"ranks": set()})
     assert out["instagram_caption"] == d["question"] + " Up seven spots. Full board at stingercollectibles.com."
+
+
+ROBOT, NATURAL = 'Dak Prescott: No. 17 to No. 10 in three weeks.', 'Dak Prescott climbed from 17 to 10 in three weeks.'
+
+
+def test_hook_reads_naturally():
+    p = " || ".join(check(script(hook=ROBOT)))
+    assert "the way a fan would" in p
+    assert not any("the way a fan would" in x for x in check(script(hook=NATURAL)))
