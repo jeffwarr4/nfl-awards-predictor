@@ -101,7 +101,7 @@ REEL_SAFE_RIGHT  = 120     # Instagram's like/comment/share column
 REEL_WORDS     = (40, 50)  # narration length across all four beats
 REEL_PROOF_MAX_WORDS = 26  # the proof beat: short sentences, one fact each (a 31-word NBA proof read as wordy)
 REEL_WPS       = 3.0       # speaking pace for each beat's word target
-REEL_HOOK_MAX_WORDS = 10   # the first beat: his name, then the hook fact ("Dak Prescott: No. 17 to No. 10 in three weeks.")
+REEL_HOOK_MAX_WORDS = 10   # the first beat: one natural sentence, no "No." ("Dak Prescott climbed from 17 to 10 in three weeks.")
 REEL_ASK_MAX_WORDS  = 14   # the last beat: one comment question
 # Story picker thresholds (src/publish/reel_story.py)
 REEL_TOP_SPOTS = 5         # "top 5" for the climber and drop stories

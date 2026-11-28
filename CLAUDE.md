@@ -76,7 +76,7 @@ columns `BOARD_DEPTH` (30) deep — a 2010–2025 replay showed every eventual w
 covering 98–100% of top-5 vote finishers from Week 4. Each has 4 rolling timestamped archives. After chips run,
 `board_mvp_latest.csv` gets trailing `chips` (top 3, pipe-separated) and `why_blurb` (top-3 and bubble Whys) columns;
 the stingercollectibles.com NFL page and home Trending read that file straight from GitHub (no Google Sheet).
-`top10_mvp_latest.csv` keeps `BOARD_COLS` only: the Sheet still imports it for the old Squarespace page until cutover. Plus
+`top10_mvp_latest.csv` keeps `BOARD_COLS` only: the Sheet imports it for the old Squarespace page (the old Squarespace site was replaced by the Cloudflare site on 2026-11-23, which doesn't read it; keep it until Squarespace is cancelled (early Dec 2026, the rollback window), then it can be retired). Plus
 `chip_data/`, `graphics/mvp_board_{year}_wk{NN}.png` + `mvp_board_latest.png`,
 `graphics/bubble_board_{year}_wk{NN}.png` + `bubble_board_latest.png`, `graphics/caption_mvp.txt` (covers
 the two-slide carousel). `.prev_board_mvp.csv` (30 rows) is the movement baseline: it is rolled forward only
@@ -120,7 +120,7 @@ on screen and ends the Instagram caption).
   week's move and at least 2 weeks back ("No. 30 → No. 3 in 3 weeks"; `hook_line_img` draws the "→").
 - `reel_script.py` writes four timed beats in Jeff's first-person voice on `REEL_MODEL` (Opus 5.5, with the API's
   refusal fallback; chips stay on Haiku), plus the on-screen `question`, the Instagram caption and 5 hashtags. v3
-  (Nov 2026) makes it flow: the hook names him ("Dak Prescott: No. 17 to No. 10 in three weeks."), the whole script uses ONE time window, the proof
+  (Nov 2026) makes it flow: the hook names him in one natural sentence ("Dak Prescott climbed from 17 to 10 in three weeks."), the whole script uses ONE time window, the proof
   gives ONE reason after a lead-in that rotates by week (`PROOF_OPENERS`: "So what changed?", "Here's why.", "The reason?", "What happened?", offset per sport by `OPENER_OFFSET` so the three sports differ; the model may skip it when the hook makes the reason obvious, and `problems()` flags any other lead-in) in connected sentences (at most two numbers), the context is the gap to
   the milestone, and the ask is a yes/no or two-way question about it. `story_frame()` hands the script:
   - the window: the `comparison_row` week to now ("the last three weeks (Week 8 to Week 11), his last three
